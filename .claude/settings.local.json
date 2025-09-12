@@ -16,7 +16,9 @@
       "Bash(./tools/gitlab/claude-agent-gitlab.sh create-issue:*)",
       "Bash(find:*)",
       "Read(//Users/ghscholt/**)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": [],
