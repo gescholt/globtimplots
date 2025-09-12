@@ -15,7 +15,8 @@
       "Bash(./tools/gitlab/setup-labels.sh:*)",
       "Bash(./tools/gitlab/claude-agent-gitlab.sh create-issue:*)",
       "Bash(find:*)",
-      "Read(//Users/ghscholt/**)"
+      "Read(//Users/ghscholt/**)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": [],
