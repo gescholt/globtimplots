@@ -22,7 +22,6 @@ export cairo_plot_polyapprox_levelset, plot_convergence_analysis, plot_discrete_
 export plot_filtered_y_distances, plot_distance_statistics, plot_convergence_captured
 export plot_hessian_norms, plot_condition_numbers, plot_critical_eigenvalues
 export plot_all_eigenvalues, plot_raw_vs_refined_eigenvalues
-export plot_error_function_1D_with_critical_points, plot_error_function_2D_with_critical_points
 
 # Export utility functions
 export transform_coordinates, points_in_hypercube

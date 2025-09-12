@@ -21,9 +21,9 @@ struct ApproxPoly{T,S}
     # Placeholder structure
 end
 
-# GLMakie-specific extensions - source functions are in main package
+# GLMakie-specific plotting functions
 
-function GlobtimPlots.plot_error_function_1D_with_critical_points(
+function plot_error_function_1D_with_critical_points(
     pol::ApproxPoly,
     TR::test_input,
     df::DataFrame,
@@ -1157,6 +1157,6 @@ function plot_raw_vs_refined_eigenvalues(
 end
 
 # Note: Types LevelSetData and VisualizationParameters are exported from the main module
-# Functions are implemented here and made available when GLMakie is loaded
+# Functions are implemented in this extension and available when GLMakie is loaded
 
 end
