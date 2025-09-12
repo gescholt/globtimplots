@@ -32,15 +32,20 @@ function plot_polyapprox_3d(
     fade::Bool = false,
     z_cut = 0.25
 )
+    # Check if GLMakie is available
+    if !isdefined(Main, :GLMakie)
+        error("GLMakie must be loaded to use 3D plotting functionality. Run 'using GLMakie' first.")
+    end
+    
     # Type-stable coordinate transformation using multiple dispatch
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
 
     z_coords = pol.z
 
     if size(coords)[2] == 2
-        # Create figure
-        fig = Figure(size = figure_size)
-        ax = Axis3(
+        # Create figure using GLMakie
+        fig = Main.GLMakie.Figure(size = figure_size)
+        ax = Main.GLMakie.Axis3(
             fig[1, 1],
             # title = "",
             xlabel = "x₁",
@@ -101,7 +106,7 @@ function plot_polyapprox_3d(
             end
 
             # Plot the lower (non-faded) surface with normal alpha
-            surf_lower = surface!(
+            surf_lower = Main.GLMakie.surface!(
                 ax,
                 x_unique,
                 y_unique,
@@ -132,7 +137,7 @@ function plot_polyapprox_3d(
                 end
 
                 # Plot this level
-                surf_level = surface!(
+                surf_level = Main.GLMakie.surface!(
                     ax,
                     x_unique,
                     y_unique,
@@ -145,7 +150,7 @@ function plot_polyapprox_3d(
             end
         else
             # Plot the entire surface with uniform alpha
-            surf = surface!(
+            surf = Main.GLMakie.surface!(
                 ax,
                 x_unique,
                 y_unique,
@@ -166,7 +171,7 @@ function plot_polyapprox_3d(
             # Points close to critical levels
             close_idx = df.close
             if any(close_idx)
-                scatter!(
+                Main.GLMakie.scatter!(
                     ax,
                     df.x1[close_idx],
                     df.x2[close_idx],
@@ -182,7 +187,7 @@ function plot_polyapprox_3d(
             # Points not close to critical levels
             not_close_idx = .!df.close
             if any(not_close_idx)
-                scatter!(
+                Main.GLMakie.scatter!(
                     ax,
                     df.x1[not_close_idx],
                     df.x2[not_close_idx],
@@ -196,7 +201,7 @@ function plot_polyapprox_3d(
             end
         else
             # All points if there's no close/far distinction
-            scatter!(
+            Main.GLMakie.scatter!(
                 ax,
                 df.x1,
                 df.x2,
@@ -212,7 +217,7 @@ function plot_polyapprox_3d(
             # Plot uncaptured critical points
             uncaptured_idx = .!df_min.captured
             if any(uncaptured_idx)
-                scatter!(
+                Main.GLMakie.scatter!(
                     ax,
                     df_min.x1[uncaptured_idx],
                     df_min.x2[uncaptured_idx],
@@ -228,7 +233,7 @@ function plot_polyapprox_3d(
             if show_captured
                 captured_idx = df_min.captured
                 if any(captured_idx)
-                    scatter!(
+                    Main.GLMakie.scatter!(
                         ax,
                         df_min.x1[captured_idx],
                         df_min.x2[captured_idx],
@@ -245,7 +250,7 @@ function plot_polyapprox_3d(
         # Optional: Create animation if requested
         if rotate
             @info "Recording animation to $(filename)..."
-            record(fig, filename, 1:240; framerate = 30) do frame
+            Main.GLMakie.record(fig, filename, 1:240; framerate = 30) do frame
                 ax.azimuth[] = 3π / 4 + 2π * frame / 240
                 ax.elevation[] = π / 6 + π / 12 * sin(2π * frame / 240)
             end
