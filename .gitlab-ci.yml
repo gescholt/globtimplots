@@ -1,0 +1,111 @@
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  JULIA_VERSION: "1.9"
+  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia"
+  JULIA_PROJECT: "@."
+
+cache:
+  paths:
+    - .julia/
+    - Manifest.toml
+
+.julia_template: &julia_template
+  image: julia:${JULIA_VERSION}
+  before_script:
+    - julia --version
+    - julia --project=. -e "using Pkg; Pkg.instantiate()"
+    - julia --project=. -e "using Pkg; Pkg.precompile()"
+
+test:julia-1.9:
+  <<: *julia_template
+  stage: test
+  script:
+    - julia --project=. -e "using Pkg; Pkg.test()"
+  only:
+    - merge_requests
+    - main
+    - develop
+  artifacts:
+    expire_in: 1 week
+    when: always
+  allow_failure: true  # Allow failure during setup phase
+
+test:julia-1.10:
+  <<: *julia_template
+  image: julia:1.10
+  stage: test
+  script:
+    - julia --project=. -e "using Pkg; Pkg.test()"
+  only:
+    - merge_requests
+    - main
+    - develop
+  allow_failure: true
+
+lint:
+  <<: *julia_template
+  stage: test
+  script:
+    - julia --project=. -e "using Pkg; Pkg.add(\"JuliaFormatter\")"
+    - julia --project=. -e "using JuliaFormatter; format(\".\", verbose=true, overwrite=false) || error(\"Code not formatted\")"
+  only:
+    - merge_requests
+    - main
+  allow_failure: true
+
+build:docs:
+  <<: *julia_template
+  stage: build
+  script:
+    - julia --project=docs -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"
+    - julia --project=docs docs/make.jl
+  artifacts:
+    paths:
+      - docs/build/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+  allow_failure: true
+
+package_quality:
+  <<: *julia_template
+  stage: test
+  script:
+    - julia --project=. -e "using Pkg; Pkg.add(\"Aqua\")"
+    - julia --project=. -e "using Aqua, GlobtimPlots; Aqua.test_all(GlobtimPlots)"
+  only:
+    - merge_requests
+    - main
+  allow_failure: true
+
+coverage:
+  <<: *julia_template
+  stage: test
+  script:
+    - julia --project=. -e "using Pkg; Pkg.add(\"Coverage\")"
+    - julia --project=. -e "using Pkg; Pkg.test(coverage=true)"
+    - julia --project=. -e "using Coverage; Codecov.submit(process_folder())"
+  coverage: '/Test coverage (\d+\.\d+%)/'
+  only:
+    - main
+    - develop
+  allow_failure: true
+
+pages:
+  stage: deploy
+  dependencies:
+    - build:docs
+  script:
+    - mkdir public
+    - cp -r docs/build/* public/ 2>/dev/null || echo "No docs to deploy"
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+  only:
+    - main
