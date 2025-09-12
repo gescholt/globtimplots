@@ -18,7 +18,8 @@
       "Read(//Users/ghscholt/**)",
       "Bash(git pull:*)",
       "Bash(git checkout:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(gh api:*)"
     ],
     "deny": [],
     "ask": [],
