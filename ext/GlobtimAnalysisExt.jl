@@ -1,6 +1,6 @@
 module GlobtimAnalysisExt
 
-using Globtim
+using GlobtimPlots
 import Optim, Clustering, Distributions
 
 # Advanced analysis functionality that depends on optimization and statistical packages

@@ -1,6 +1,6 @@
 module GlobtimDataExt
 
-using Globtim
+using GlobtimPlots
 import CSV, DataFrames
 
 # Extend the stub functions from Globtim
@@ -9,7 +9,7 @@ import CSV, DataFrames
 
 Load data from CSV file when CSV and DataFrames are available.
 """
-function Globtim.load_data(filepath::String)
+function load_data(filepath::String)
     return CSV.read(filepath, DataFrames.DataFrame)
 end
 
@@ -18,7 +18,7 @@ end
 
 Save DataFrame to CSV file when CSV and DataFrames are available.
 """
-function Globtim.save_data(data::DataFrames.DataFrame, filepath::String)
+function save_data(data::DataFrames.DataFrame, filepath::String)
     CSV.write(filepath, data)
 end
 
@@ -27,7 +27,7 @@ end
 
 Create a standard results dataframe structure.
 """
-function Globtim.create_results_dataframe()
+function create_results_dataframe()
     return DataFrames.DataFrame(
         function_name = String[],
         critical_points = Int[],

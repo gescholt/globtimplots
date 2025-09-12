@@ -1,6 +1,6 @@
 module GlobtimDevExt
 
-using Globtim
+using GlobtimPlots
 import Parameters
 
 # Export development functionality when Parameters is available

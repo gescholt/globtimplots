@@ -1,7 +1,7 @@
 """
     plot_polyapprox_3d(
-        pol::ApproxPoly,
-        TR::test_input,
+        pol::AbstractPolynomialData,
+        TR::AbstractProblemInput,
         df::DataFrame,
         df_min::DataFrame;
         figure_size::Tuple{Int,Int} = (1000, 800),
@@ -18,9 +18,9 @@ Similar in usage to cairo_plot_polyapprox_levelset but renders a 3D surface.
 # Returns
 - `fig`: The GLMakie figure object
 """
-function Globtim.plot_polyapprox_3d(
-    pol::ApproxPoly,
-    TR::test_input,
+function plot_polyapprox_3d(
+    pol::AbstractPolynomialData,
+    TR::AbstractProblemInput,
     df::DataFrame,
     df_min::DataFrame;
     figure_size::Tuple{Int, Int} = (1000, 800),

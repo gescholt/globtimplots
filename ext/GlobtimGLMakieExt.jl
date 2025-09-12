@@ -21,9 +21,7 @@ struct ApproxPoly{T,S}
     # Placeholder structure
 end
 
-# Include GLMakie-specific plotting functionality
-include("../src/graphs_makie.jl")
-include("../src/LevelSetViz.jl")
+# GLMakie-specific extensions - source functions are in main package
 
 function GlobtimPlots.plot_error_function_1D_with_critical_points(
     pol::ApproxPoly,
@@ -183,7 +181,7 @@ function GlobtimPlots.plot_error_function_1D_with_critical_points(
     fig
 end
 
-function Globtim.plot_error_function_2D_with_critical_points(
+function plot_error_function_2D_with_critical_points(
     fig,
     pol::ApproxPoly,
     TR::test_input,
@@ -392,7 +390,7 @@ function Globtim.plot_error_function_2D_with_critical_points(
 end
 
 # Convenience method that creates its own figure
-function Globtim.plot_error_function_2D_with_critical_points(
+function plot_error_function_2D_with_critical_points(
     pol::ApproxPoly,
     TR::test_input,
     df::DataFrame,
@@ -422,7 +420,7 @@ function Globtim.plot_error_function_2D_with_critical_points(
 end
 
 # Method that accepts a GridPosition or GridLayout position
-function Globtim.plot_error_function_2D_with_critical_points(
+function plot_error_function_2D_with_critical_points(
     grid_position::Union{Makie.GridPosition, Makie.GridLayout},
     pol::ApproxPoly,
     TR::test_input,
@@ -606,7 +604,7 @@ function Globtim.plot_error_function_2D_with_critical_points(
 end
 
 # Include Phase 2 Hessian visualization functions with proper GLMakie scope
-function Globtim.plot_hessian_norms(df::DataFrames.DataFrame)
+function plot_hessian_norms(df::DataFrames.DataFrame)
     fig = GLMakie.Figure(size = (800, 600))
     ax = GLMakie.Axis(
         fig[1, 1],
@@ -635,7 +633,7 @@ function Globtim.plot_hessian_norms(df::DataFrames.DataFrame)
     return fig
 end
 
-function Globtim.plot_condition_numbers(df::DataFrames.DataFrame)
+function plot_condition_numbers(df::DataFrames.DataFrame)
     fig = GLMakie.Figure(size = (800, 600))
     ax = GLMakie.Axis(
         fig[1, 1],
@@ -677,7 +675,7 @@ function Globtim.plot_condition_numbers(df::DataFrames.DataFrame)
     return fig
 end
 
-function Globtim.plot_critical_eigenvalues(df::DataFrames.DataFrame)
+function plot_critical_eigenvalues(df::DataFrames.DataFrame)
     fig = GLMakie.Figure(size = (1200, 500))
 
     # Plot 1: Smallest positive eigenvalues for minima
@@ -745,7 +743,7 @@ function Globtim.plot_critical_eigenvalues(df::DataFrames.DataFrame)
     return fig
 end
 
-function Globtim.plot_all_eigenvalues(
+function plot_all_eigenvalues(
     f::Function,
     df::DataFrames.DataFrame;
     sort_by = :magnitude
@@ -930,7 +928,7 @@ function Globtim.plot_all_eigenvalues(
     return fig
 end
 
-function Globtim.plot_raw_vs_refined_eigenvalues(
+function plot_raw_vs_refined_eigenvalues(
     f::Function,
     df_raw::DataFrames.DataFrame,
     df_refined::DataFrames.DataFrame;

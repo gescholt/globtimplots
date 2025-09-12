@@ -1,9 +1,6 @@
-using CairoMakie
-using Distributions
 using LinearAlgebra
 using DataFrames
 using Statistics
-using Globtim: points_in_hypercube, transform_coordinates, ApproxPoly, test_input
 
 """
 Analyze convergence distances for a DataFrame of critical points.
@@ -85,7 +82,7 @@ end
 """
 Plot the discrete L2-norm approximation error attained by the polynomial approximant. 
 """
-function Globtim.plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int)
+function plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int)
     degrees = start_degree:step:end_degree
     l2_norms = Float64[]
 
@@ -119,7 +116,7 @@ end
 We display how many critical points we found, at each degree `d` and, up to a set tolerance tol_dist, we show how many of these points are captured by the Optim routine. 
 """
 
-function Globtim.capture_histogram(
+function capture_histogram(
     results,
     start_degree::Int,
     end_degree::Int,
@@ -181,7 +178,7 @@ end
 """
 Plot summary of convergence distances for a range of degrees --> for each captured "x", compute the distance to "y", the optimized point.
 """
-function Globtim.plot_convergence_analysis(
+function plot_convergence_analysis(
     results,
     start_degree::Int,
     end_degree::Int,
@@ -237,155 +234,15 @@ function compute_min_distances(df, df_check)
     return min_distances
 end
 
-"""
-Updated visualization function to handle per-coordinate scaling factors.
-"""
-function Globtim.cairo_plot_polyapprox_levelset(
-    pol::ApproxPoly{T, S},
-    TR::test_input,
-    df::DataFrame,
-    df_min::DataFrame;
-    figure_size::Tuple{Int, Int} = (1000, 600),
-    z_limits::Union{Nothing, Tuple{Float64, Float64}} = nothing,
-    chebyshev_levels::Bool = false,
-    num_levels::Int = 30,
-    show_captured::Bool = true  # New parameter
-) where {T <: Number, S <: Union{Float64, Vector{Float64}}}
-    # Type-stable coordinate transformation using multiple dispatch
-    coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
-
-    z_coords = pol.z
-
-    if size(coords)[2] == 2
-        fig = Figure(size = figure_size)
-        ax = Axis(fig[1, 1], title = "")
-
-        # Calculate z_limits if not provided
-        if isnothing(z_limits)
-            z_values = Float64[]
-            append!(z_values, df.z)
-            append!(z_values, df_min.value)
-            z_limits = (minimum(z_values), maximum(z_values))
-        end
-
-        # Calculate levels
-        levels = if chebyshev_levels
-            k = collect(0:(num_levels - 1))
-            cheb_nodes = -cos.((2k .+ 1) .* π ./ (2 * num_levels))
-            z_min, z_max = z_limits
-            (z_max - z_min) ./ 2 .* cheb_nodes .+ (z_max + z_min) ./ 2
-        else
-            num_levels
-        end
-
-        # Prepare contour data
-        x_unique = sort(unique(coords[:, 1]))
-        y_unique = sort(unique(coords[:, 2]))
-        Z = fill(NaN, (length(y_unique), length(x_unique)))
-
-        for (idx, (x, y, z)) in enumerate(zip(coords[:, 1], coords[:, 2], z_coords))
-            i = findlast(≈(y), y_unique)
-            j = findlast(≈(x), x_unique)
-            if !isnothing(i) && !isnothing(j)
-                Z[j, i] = z
-            end
-        end
-
-        # Create contour plot
-        chosen_colormap = :inferno
-        contourf!(ax, x_unique, y_unique, Z, colormap = chosen_colormap, levels = levels)
-
-        # Initialize empty array for legend entries
-        legend_entries = []
-
-        # Plot and add legend entries for all point types
-        if :close in propertynames(df)
-            # Far points
-            not_close_idx = .!df.close
-            if any(not_close_idx)
-                scatter!(
-                    ax,
-                    df.x1[not_close_idx],
-                    df.x2[not_close_idx],
-                    markersize = 10,
-                    color = :white,
-                    strokecolor = :black,
-                    strokewidth = 1,
-                    label = "Far"
-                )
-                push!(legend_entries, "Far")
-            end
-
-            # Near points
-            close_idx = df.close
-            if any(close_idx)
-                scatter!(
-                    ax,
-                    df.x1[close_idx],
-                    df.x2[close_idx],
-                    markersize = 10,
-                    color = :green,
-                    strokecolor = :black,
-                    strokewidth = 1,
-                    label = "Near"
-                )
-                push!(legend_entries, "Near")
-            end
-        else
-            # All points if no close/far distinction
-            scatter!(
-                ax,
-                df.x1,
-                df.x2,
-                markersize = 2,
-                color = :orange,
-                label = "All points"
-            )
-            push!(legend_entries, "All points")
-        end
-
-        # Uncaptured points
-        if !isempty(df_min)
-            uncaptured_idx = .!df_min.captured
-            captured_idx = df_min.captured
-
-            if any(uncaptured_idx)
-                scatter!(
-                    ax,
-                    df_min.x1[uncaptured_idx],
-                    df_min.x2[uncaptured_idx],
-                    markersize = 15,
-                    marker = :diamond,
-                    color = :red,
-                    label = "Uncaptured"
-                )
-                push!(legend_entries, "Uncaptured")
-            end
-
-            # Only show captured points if show_captured is true
-            if show_captured && any(captured_idx)
-                scatter!(
-                    ax,
-                    df_min.x1[captured_idx],
-                    df_min.x2[captured_idx],
-                    markersize = 15,
-                    marker = :diamond,
-                    color = :blue,
-                    label = "Captured"
-                )
-                push!(legend_entries, "Captured")
-            end
-        end
-        return fig
-    end
-end
+# Function declaration for extension - implementation in GlobtimCairoMakieExt
+function cairo_plot_polyapprox_levelset end
 
 """
 Updated plot_filtered_y_distances function to handle per-coordinate scaling.
 """
-function Globtim.plot_filtered_y_distances(
+function plot_filtered_y_distances(
     df_filtered::DataFrame,
-    TR::test_input,  # Added TR parameter
+    TR::AbstractProblemInput,  # Added TR parameter
     results::Dict{
         Int,
         NamedTuple{
@@ -494,7 +351,7 @@ end
 """
 Plot the outputs of`analyze_converged_points` function. 
 """
-function Globtim.plot_distance_statistics(
+function plot_distance_statistics(
     stats::Dict{String, Any};
     show_legend::Bool = true
 )
@@ -512,7 +369,7 @@ function Globtim.plot_distance_statistics(
     return fig
 end
 
-function Globtim.create_legend_figure(tol_dist::Float64)
+function create_legend_figure(tol_dist::Float64)
     fig = Figure(size = (300, 100))
 
     # Create dummy axis with invisible elements for legend
@@ -539,7 +396,7 @@ function Globtim.create_legend_figure(tol_dist::Float64)
     return fig
 end
 
-function Globtim.plot_convergence_captured(
+function plot_convergence_captured(
     results,
     df_check,
     start_degree::Int,
@@ -582,7 +439,7 @@ Enhanced histogram showing BFGS convergence to theoretical minimizers.
 - Bar height: number of BFGS refined points that converged to one of the theoretical minimizers
 - Green portion: raw critical points that are close to theoretical minimizers
 """
-function Globtim.histogram_enhanced(
+function histogram_enhanced(
     results,
     df_theoretical,  # DataFrame with theoretical critical points
     start_degree::Int,
@@ -701,7 +558,7 @@ end
 Histogram showing only minimum points (both raw and BFGS refined).
 Counts each theoretical minimizer only once - avoids double counting when multiple points converge to the same minimizer.
 """
-function Globtim.histogram_minimizers_only(
+function histogram_minimizers_only(
     results,
     df_theoretical,  # DataFrame with theoretical critical points
     start_degree::Int,

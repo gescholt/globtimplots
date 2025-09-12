@@ -12,7 +12,7 @@ Date: September 2025
 """
 module GlobtimVisualizationFrameworkExt
 
-using Globtim.VisualizationFramework
+using GlobtimPlots
 using CairoMakie, GLMakie
 using Colors, ColorSchemes
 using Printf
