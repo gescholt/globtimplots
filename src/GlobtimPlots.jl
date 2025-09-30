@@ -6,6 +6,9 @@ include("interfaces.jl")
 # Include core plotting functionality
 include("graphs_cairo.jl")
 include("graphs_makie.jl")
+include("comparison_plots.jl")
+include("simple_plots.jl")  # Simple focused plotting
+include("experiment_results_plots.jl")  # Cluster experiment results visualization
 # include("InteractiveVizCore.jl")  # Deactivated - documentation functionality
 # include("InteractiveViz.jl")      # Deactivated - documentation functionality
 
@@ -22,6 +25,11 @@ export cairo_plot_polyapprox_levelset, plot_convergence_analysis, plot_discrete_
 export plot_filtered_y_distances, plot_distance_statistics, plot_convergence_captured
 export plot_hessian_norms, plot_condition_numbers, plot_critical_eigenvalues
 export plot_all_eigenvalues, plot_raw_vs_refined_eigenvalues
+export plot_degree_comparison, plot_domain_comparison, plot_experiment_overview
+export create_comparison_plots
+export plot_results, plot_multiple_results
+export makie_available
+export plot_experiment_results_static, plot_experiment_results_interactive
 
 # Export utility functions
 export transform_coordinates, points_in_hypercube
