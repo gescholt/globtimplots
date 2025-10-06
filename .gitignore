@@ -47,4 +47,4 @@ build/
 bin/
 
 # GitLab environment configuration
-.env.gitlab.local
+.env.gitlab.local# .glab-env is tracked (sources .env.gitlab.local which is gitignored)
