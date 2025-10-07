@@ -48,3 +48,11 @@ bin/
 
 # GitLab environment configuration
 .env.gitlab.local# .glab-env is tracked (sources .env.gitlab.local which is gitignored)
+
+# Test scripts in root (should be in test/ or examples/)
+test_*.jl
+
+# Output directories (temporary plotting outputs)
+*_plots_*/
+output_plots/
+test_graphics/
