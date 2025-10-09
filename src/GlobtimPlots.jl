@@ -6,8 +6,9 @@ include("interfaces.jl")
 # Include core plotting functionality
 include("graphs_cairo.jl")
 include("graphs_makie.jl")
-include("comparison_plots.jl")
-include("simple_plots.jl")  # Simple focused plotting
+include("level_set_viz.jl")  # 3D level set visualization
+# include("comparison_plots.jl")  # Missing file
+# include("simple_plots.jl")  # Missing file - Simple focused plotting
 include("experiment_results_plots.jl")  # Cluster experiment results visualization
 # include("InteractiveVizCore.jl")  # Deactivated - documentation functionality
 # include("InteractiveViz.jl")      # Deactivated - documentation functionality
@@ -30,6 +31,10 @@ export create_comparison_plots
 export plot_results, plot_multiple_results
 export makie_available
 export plot_experiment_results_static, plot_experiment_results_interactive
+# Level set visualization functions
+export LevelSetData, VisualizationParameters
+export prepare_level_set_data, to_makie_format
+export create_level_set_visualization, create_level_set_animation
 
 # Export utility functions
 export transform_coordinates, points_in_hypercube

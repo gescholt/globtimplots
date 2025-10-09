@@ -14,10 +14,14 @@ struct LevelSetData{T}
 end
 
 struct VisualizationParameters{T}
-    # Placeholder structure  
+    # Placeholder structure
 end
 
 struct ApproxPoly{T,S}
+    # Placeholder structure
+end
+
+struct test_input
     # Placeholder structure
 end
 
