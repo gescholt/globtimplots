@@ -1,5 +1,13 @@
 module GlobtimPlots
 
+# Core plotting dependencies
+using CairoMakie
+using GLMakie
+using DataFrames
+using Statistics
+using Dates
+using ProgressMeter
+
 # Include abstract interfaces
 include("interfaces.jl")
 
@@ -7,11 +15,11 @@ include("interfaces.jl")
 include("graphs_cairo.jl")
 include("graphs_makie.jl")
 include("level_set_viz.jl")  # 3D level set visualization
-# include("comparison_plots.jl")  # Missing file
-# include("simple_plots.jl")  # Missing file - Simple focused plotting
 include("experiment_results_plots.jl")  # Cluster experiment results visualization
-# include("InteractiveVizCore.jl")  # Deactivated - documentation functionality
-# include("InteractiveViz.jl")      # Deactivated - documentation functionality
+
+# Include campaign plotting files that only depend on Makie
+# (These use duck typing for ExperimentResult/CampaignResults types from GlobtimPostProcessing)
+include("CampaignPlotting.jl")
 
 # Export abstract types
 export AbstractPolynomialData, AbstractProblemInput, AbstractCriticalPointData
@@ -31,6 +39,19 @@ export create_comparison_plots
 export plot_results, plot_multiple_results
 export makie_available
 export plot_experiment_results_static, plot_experiment_results_interactive
+
+# Export campaign plotting functions from CampaignPlotting.jl (Makie-based)
+export PlotBackend, Interactive, Static
+export create_experiment_plots, create_campaign_comparison_plot, create_single_plot, save_plot
+export generate_experiment_labels
+
+# Note: VegaLite and Tidier-based plotting functions are temporarily disabled
+# due to VegaLite dependency conflicts with modern Julia packages
+# These will be re-enabled once VegaLite compatibility is resolved:
+# - campaign_to_tidy_dataframe, compute_campaign_summary_stats (from TidierTransforms.jl)
+# - create_convergence_dashboard, create_parameter_sensitivity_plot (from VegaPlotting.jl)
+# - create_multi_metric_comparison, create_efficiency_analysis (from VegaPlotting.jl)
+# - plot_l2_convergence (from VegaPlottingMinimal.jl)
 # Level set visualization functions
 export LevelSetData, VisualizationParameters
 export prepare_level_set_data, to_makie_format
@@ -44,9 +65,7 @@ export capture_histogram, create_legend_figure, histogram_enhanced, histogram_mi
 # Package version
 const VERSION = v"0.1.0"
 
-# Core plotting functionality will be loaded through extensions
-# when the appropriate backend packages are loaded
-
+# Initialize the module
 function __init__()
     @info "GlobtimPlots.jl loaded. Extensions will be available when backend packages are loaded."
 end
