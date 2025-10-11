@@ -8,6 +8,9 @@ using Statistics
 using Dates
 using ProgressMeter
 
+# Import data types from GlobtimPostProcessing
+using GlobtimPostProcessing: ExperimentResult, CampaignResults
+
 # Include abstract interfaces
 include("interfaces.jl")
 
