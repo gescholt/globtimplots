@@ -8,6 +8,12 @@ using Statistics
 using Dates
 using ProgressMeter
 
+# Re-export Makie backends so users get them automatically
+# This allows: using GlobtimPlots; CairoMakie.activate!()
+using Reexport
+@reexport using CairoMakie
+@reexport using GLMakie
+
 # Import data types from GlobtimPostProcessing
 using GlobtimPostProcessing: ExperimentResult, CampaignResults
 

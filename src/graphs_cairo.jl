@@ -80,10 +80,17 @@ function analyze_captured_distances(df::DataFrame, df_check::DataFrame)
 end
 
 """
-Plot the discrete L2-norm approximation error attained by the polynomial approximant. 
+Plot the discrete L2-norm approximation error attained by the polynomial approximant.
 """
 function plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int)
-    degrees = start_degree:step:end_degree
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
+
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
+
     l2_norms = Float64[]
 
     # Extract L2 norms for each degree
@@ -124,8 +131,14 @@ function capture_histogram(
     tol_dist::Float64 = 0.001,
     show_legend::Bool = false
 )
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
 
-    degrees = start_degree:step:end_degree
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
+
     total_mins = Int[]
     uncaptured_mins = Int[]
 
@@ -185,7 +198,14 @@ function plot_convergence_analysis(
     step::Int;
     show_legend::Bool = true
 )
-    degrees = start_degree:step:end_degree
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
+
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
+
     max_distances = Float64[]
     avg_distances = Float64[]
 
@@ -256,8 +276,14 @@ function plot_filtered_y_distances(
     use_optimized::Bool = true,
     show_legend::Bool = true
 )
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
 
-    degrees = start_degree:step:end_degree
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
+
     n_dims = count(col -> startswith(string(col), "x"), names(df_filtered))
     first_degree = first(degrees)
     n_points = nrow(results[first_degree].df)
@@ -404,7 +430,14 @@ function plot_convergence_captured(
     step::Int;
     show_legend::Bool = true
 )
-    degrees = start_degree:step:end_degree
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
+
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
+
     max_distances = Float64[]
     avg_distances = Float64[]
 
@@ -449,7 +482,13 @@ function histogram_enhanced(
     tol_raw::Float64 = 0.1,         # Tolerance for raw points to theoretical minimizers
     show_legend::Bool = true
 )
-    degrees = start_degree:step:end_degree
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
+
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
 
     # Extract theoretical minimizers (type_4d == "min")
     theoretical_mins = if "type_4d" in names(df_theoretical)
@@ -567,7 +606,13 @@ function histogram_minimizers_only(
     tol_theoretical::Float64 = 0.001,  # Tolerance for matching theoretical minimizers
     show_legend::Bool = true
 )
-    degrees = start_degree:step:end_degree
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
+
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
 
     # Extract theoretical minimizers (only "min" points, not saddle points)
     theoretical_mins = if "type_4d" in names(df_theoretical)
