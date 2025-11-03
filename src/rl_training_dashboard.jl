@@ -468,8 +468,8 @@ function plot_training_curves_simple(results;
         expected_minima = get(results.func_config, "expected_minima", nothing)
     end
 
-    # Create figure
-    fig = Figure(size=(1400, 1000))
+    # Create figure (extra height for objective function panel)
+    fig = Figure(size=(1400, 1200))
 
     Label(fig[0, :], text=title, fontsize=24, font=:bold)
 
@@ -559,6 +559,36 @@ function plot_training_curves_simple(results;
               align=(:center, :center), fontsize=16, font=:bold)
     end
 
+    # Panel 5: Objective function (if available)
+    if haskey(results, :func_config)
+        func_config = results.func_config
+        if haskey(func_config, "f") && haskey(func_config, "domain")
+            f = func_config["f"]
+            domain = func_config["domain"]
+
+            ax5 = Axis(fig[3, :],
+                      xlabel="x",
+                      ylabel="f(x)",
+                      title="Objective Function: $(get(func_config, "description", get(func_config, "name", "")))")
+
+            # Plot function over domain
+            x_vals = range(domain[1], domain[2], length=500)
+            y_vals = [f([x]) for x in x_vals]
+
+            lines!(ax5, x_vals, y_vals, color=:black, linewidth=2, label="f(x)")
+
+            # Mark expected minima line (if known)
+            if expected_minima !== nothing
+                text!(ax5, domain[1] + 0.02 * (domain[2] - domain[1]),
+                      minimum(y_vals) + 0.1 * (maximum(y_vals) - minimum(y_vals)),
+                      text="Target: $expected_minima minima",
+                      fontsize=12, color=:red)
+            end
+
+            axislegend(ax5, position=:rt)
+        end
+    end
+
     display(fig)
 
     # Keep window open until user presses Enter (macOS display doesn't block by default)
@@ -595,7 +625,7 @@ function plot_multi_strategy_comparison_simple(results_dict::Dict;
                                                window_size=25)
     # GLMakie is activated automatically when loaded
 
-    fig = Figure(size=(1600, 900))
+    fig = Figure(size=(1600, 1100))
 
     Label(fig[0, :], text="Training Strategy Comparison",
           fontsize=24, font=:bold)
@@ -675,6 +705,36 @@ function plot_multi_strategy_comparison_simple(results_dict::Dict;
     end
 
     axislegend(ax_reward, position=:lt, framevisible=true, labelsize=14)
+
+    # Row 3: Objective function (if available)
+    # Get func_config from first result (same function for all strategies)
+    first_result = first(values(results_dict))
+    if haskey(first_result, :func_config)
+        func_config = first_result.func_config
+        if haskey(func_config, "f") && haskey(func_config, "domain")
+            f = func_config["f"]
+            domain = func_config["domain"]
+
+            ax_obj = Axis(fig[3, :],
+                         xlabel="x",
+                         ylabel="f(x)",
+                         title="Objective Function: $(get(func_config, "description", get(func_config, "name", "")))")
+
+            # Plot function over domain
+            x_vals = range(domain[1], domain[2], length=500)
+            y_vals = [f([x]) for x in x_vals]
+
+            lines!(ax_obj, x_vals, y_vals, color=:black, linewidth=2, label="f(x)")
+
+            # Mark expected minima
+            text!(ax_obj, domain[1] + 0.02 * (domain[2] - domain[1]),
+                  minimum(y_vals) + 0.1 * (maximum(y_vals) - minimum(y_vals)),
+                  text="Target: $expected_minima minima",
+                  fontsize=12, color=:red)
+
+            axislegend(ax_obj, position=:rt)
+        end
+    end
 
     display(fig)
 
