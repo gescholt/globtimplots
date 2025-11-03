@@ -453,7 +453,8 @@ function plot_training_curves_simple(results;
                                      title="Training Progress",
                                      expected_minima=nothing,
                                      window_size=25)
-    GLMakie.activate!()
+    # GLMakie is activated automatically when loaded
+    # No need for explicit activate!() call
 
     # Extract data
     rewards = results.episode_rewards
@@ -559,6 +560,11 @@ function plot_training_curves_simple(results;
     end
 
     display(fig)
+
+    # Keep window open until user presses Enter (macOS display doesn't block by default)
+    println("\n[Press Enter to close window and continue]")
+    readline()
+
     return fig
 end
 
@@ -587,7 +593,7 @@ plot_multi_strategy_comparison_simple(results_dict)
 function plot_multi_strategy_comparison_simple(results_dict::Dict;
                                                expected_minima=5,
                                                window_size=25)
-    GLMakie.activate!()
+    # GLMakie is activated automatically when loaded
 
     fig = Figure(size=(1600, 900))
 
@@ -671,6 +677,11 @@ function plot_multi_strategy_comparison_simple(results_dict::Dict;
     axislegend(ax_reward, position=:lt, framevisible=true, labelsize=14)
 
     display(fig)
+
+    # Keep window open until user presses Enter (macOS display doesn't block by default)
+    println("\n[Press Enter to close window and continue]")
+    readline()
+
     return fig
 end
 
