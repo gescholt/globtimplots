@@ -79,6 +79,8 @@ export capture_histogram, create_legend_figure, histogram_enhanced, histogram_mi
 # Export RL training dashboard functions
 export plot_training_progress, plot_action_distribution, plot_l2_error_evolution
 export plot_strategy_comparison, create_training_dashboard
+# Simplified API for train_dqn_phase2.jl output format
+export plot_training_curves_simple, plot_multi_strategy_comparison_simple
 
 # Export policy evolution visualization functions
 export plot_action_ratio_evolution, plot_action_stacked_area
