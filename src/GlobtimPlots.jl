@@ -14,8 +14,8 @@ using Reexport
 @reexport using CairoMakie
 @reexport using GLMakie
 
-# Import data types from GlobtimPostProcessing
-using GlobtimPostProcessing: ExperimentResult, CampaignResults
+# Note: We use duck typing for data structures from other packages (GlobtimPostProcessing, GlobTimRL)
+# This avoids circular dependencies while maintaining API flexibility
 
 # Include abstract interfaces
 include("interfaces.jl")
