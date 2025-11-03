@@ -5,41 +5,37 @@ Test script for Trefethen 3D function
 This script tests the updated solve_polynomial_system pattern with basis/precision/normalized parameters
 """
 
-# Adaptive path procedure to load dependencies
+# Set up the examples environment with local packages
 using Pkg
+Pkg.activate(@__DIR__)
 
-# Try to find and activate the GlobtimPlots project
-# First check if we're already in the right environment
-let
-    if !haskey(Pkg.project().dependencies, "GlobtimPlots") && !haskey(Pkg.project().dependencies, "Globtim")
-        # Walk up the directory tree to find Project.toml with GlobtimPlots
-        current_dir = @__DIR__
-        project_found = false
+# Add local development packages if not already added
+examples_dir = @__DIR__
+globoptim_dir = dirname(examples_dir)  # Go up from examples/ to globtimplots/
+root_dir = dirname(globoptim_dir)  # Go up from globtimplots/ to GlobalOptim/
 
-        for _ in 1:5  # Limit search depth to avoid infinite loops
-            project_file = joinpath(current_dir, "Project.toml")
-            if isfile(project_file)
-                # Check if this is the GlobtimPlots project
-                project_content = read(project_file, String)
-                if occursin("GlobtimPlots", project_content)
-                    Pkg.activate(current_dir)
-                    project_found = true
-                    break
-                end
-            end
-            # Move up one directory
-            parent_dir = dirname(current_dir)
-            if parent_dir == current_dir  # Reached root
-                break
-            end
-            current_dir = parent_dir
-        end
+globtimcore_path = joinpath(root_dir, "globtimcore")
+globtimpostproc_path = joinpath(root_dir, "globtimpostprocessing")
+globtimplots_path = globoptim_dir
 
-        if !project_found
-            @warn "Could not find GlobtimPlots project. Using default environment."
-        end
-    end
+# Develop local packages if they're not already in the environment
+if !haskey(Pkg.project().dependencies, "Globtim")
+    println("Adding Globtim from: $globtimcore_path")
+    Pkg.develop(path=globtimcore_path)
 end
+
+if !haskey(Pkg.project().dependencies, "GlobtimPostProcessing")
+    println("Adding GlobtimPostProcessing from: $globtimpostproc_path")
+    Pkg.develop(path=globtimpostproc_path)
+end
+
+if !haskey(Pkg.project().dependencies, "GlobtimPlots")
+    println("Adding GlobtimPlots from: $globtimplots_path")
+    Pkg.develop(path=globtimplots_path)
+end
+
+# Install all dependencies
+Pkg.instantiate()
 
 using Globtim
 using DynamicPolynomials: @polyvar

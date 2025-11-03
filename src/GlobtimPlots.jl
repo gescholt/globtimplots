@@ -30,6 +30,10 @@ include("experiment_results_plots.jl")  # Cluster experiment results visualizati
 # (These use duck typing for ExperimentResult/CampaignResults types from GlobtimPostProcessing)
 include("CampaignPlotting.jl")
 
+# Include RL training dashboard (accepts GlobTimRL metrics structs)
+include("rl_training_dashboard.jl")
+include("policy_evolution_viz.jl")
+
 # Export abstract types
 export AbstractPolynomialData, AbstractProblemInput, AbstractCriticalPointData
 export GenericPolynomialData, GenericProblemInput
@@ -41,6 +45,7 @@ export plot_polyapprox_animate, plot_polyapprox_flyover, plot_polyapprox_animate
 export plot_level_set, plot_polyapprox_levelset_2D
 export cairo_plot_polyapprox_levelset, plot_convergence_analysis, plot_discrete_l2
 export plot_filtered_y_distances, plot_distance_statistics, plot_convergence_captured
+export plot_theoretical_minimizer_distances
 export plot_hessian_norms, plot_condition_numbers, plot_critical_eigenvalues
 export plot_all_eigenvalues, plot_raw_vs_refined_eigenvalues
 export plot_degree_comparison, plot_domain_comparison, plot_experiment_overview
@@ -70,6 +75,15 @@ export create_level_set_visualization, create_level_set_animation
 export transform_coordinates, points_in_hypercube
 export analyze_convergence_distances, analyze_captured_distances
 export capture_histogram, create_legend_figure, histogram_enhanced, histogram_minimizers_only
+
+# Export RL training dashboard functions
+export plot_training_progress, plot_action_distribution, plot_l2_error_evolution
+export plot_strategy_comparison, create_training_dashboard
+
+# Export policy evolution visualization functions
+export plot_action_ratio_evolution, plot_action_stacked_area
+export plot_state_action_heatmap, plot_policy_evolution_comparison
+export plot_episode_decision_timeline
 
 # Package version
 const VERSION = v"0.1.0"

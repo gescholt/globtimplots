@@ -99,22 +99,31 @@ function plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int
     end
 
     # Create figure
-    fig = Figure(size = (600, 400))
+    fig = Figure(size = (700, 500), fontsize = 14)
 
-    ax = Axis(fig[1, 1], title = "Discrete L2 Norm", xlabel = "Degree")
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Polynomial Degree",
+        ylabel = "L² Approximation Error",
+        xgridvisible = true,
+        ygridvisible = true,
+        xgridstyle = :dash,
+        ygridstyle = :dash,
+        xticks = degrees
+    )
 
     # Plot the curve with points at each degree
     scatterlines!(
         ax,
         degrees,
         l2_norms,
-        color = :purple,
-        markersize = 8,
-        linewidth = 2,
-        label = "L2 Norm"
+        color = :darkblue,
+        markersize = 10,
+        linewidth = 2.5,
+        label = "L² Norm"
     )
 
-    # axislegend removed per user request
+    axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end
@@ -143,21 +152,22 @@ function capture_histogram(
     uncaptured_mins = Int[]
 
     for d in degrees
-        df_min = results[d][2]
+        df_min = results[d].df_min
         push!(total_mins, nrow(df_min))
         push!(uncaptured_mins, count(.!df_min.captured))
     end
 
-    # Standard figure size without legend
-    fig = Figure(size = (800, 600))
+    # Improved figure with better styling
+    fig = Figure(size = (800, 600), fontsize = 14)
 
     ax = Axis(
         fig[1, 1],
-        # xlabel removed per user request
-        # ylabel removed per user request
-        titlesize = 20,
-        xlabelsize = 14,
-        ylabelsize = 14
+        xlabel = "Polynomial Degree",
+        ylabel = "Number of Minimizers",
+        xgridvisible = true,
+        ygridvisible = true,
+        xgridstyle = :dash,
+        ygridstyle = :dash
     )
 
     positions = collect(degrees)
@@ -179,10 +189,8 @@ function capture_histogram(
     )
 
     ax.xticks = (positions, string.(degrees))
-    ax.xticklabelsize = 12
-    ax.yticklabelsize = 12
 
-    # Legend removed - no axis legend per user request
+    axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end
@@ -216,18 +224,33 @@ function plot_convergence_analysis(
         push!(avg_distances, stats.average)
     end
 
-    fig = Figure(size = (600, 400))
+    fig = Figure(size = (700, 500), fontsize = 14)
 
     ax = Axis(
         fig[1, 1],
-        # title="Distance to Nearest Critical Point",
-        xlabel = "Degree"
+        xlabel = "Polynomial Degree",
+        ylabel = "Distance to Nearest Critical Point",
+        xgridvisible = true,
+        ygridvisible = true,
+        xgridstyle = :dash,
+        ygridstyle = :dash,
+        xticks = degrees
     )
 
-    scatterlines!(ax, degrees, max_distances, label = "Maximum", color = :red)
-    scatterlines!(ax, degrees, avg_distances, label = "Average", color = :blue)
+    scatterlines!(ax, degrees, max_distances,
+        label = "Maximum",
+        color = :crimson,
+        markersize = 10,
+        linewidth = 2.5
+    )
+    scatterlines!(ax, degrees, avg_distances,
+        label = "Average",
+        color = :steelblue,
+        markersize = 10,
+        linewidth = 2.5
+    )
 
-    # Legend removed per user request
+    axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end
@@ -375,22 +398,42 @@ function plot_filtered_y_distances(
 end
 
 """
-Plot the outputs of`analyze_converged_points` function. 
+Plot the outputs of`analyze_converged_points` function.
 """
 function plot_distance_statistics(
     stats::Dict{String, Any};
     show_legend::Bool = true
 )
-    fig = Figure(size = (600, 400))
+    fig = Figure(size = (700, 500), fontsize = 14)
 
-    ax = Axis(fig[1, 1], xlabel = "Degree")
+    degrees = stats["degrees"]
+
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Polynomial Degree",
+        ylabel = "Distance",
+        xgridvisible = true,
+        ygridvisible = true,
+        xgridstyle = :dash,
+        ygridstyle = :dash,
+        xticks = degrees
+    )
 
     # Plot maximum and average distances
-    degrees = stats["degrees"]
-    scatterlines!(ax, degrees, stats["max_distances"], label = "Maximum", color = :red)
-    scatterlines!(ax, degrees, stats["avg_distances"], label = "Average", color = :blue)
+    scatterlines!(ax, degrees, stats["max_distances"],
+        label = "Maximum",
+        color = :crimson,
+        markersize = 10,
+        linewidth = 2.5
+    )
+    scatterlines!(ax, degrees, stats["avg_distances"],
+        label = "Average",
+        color = :steelblue,
+        markersize = 10,
+        linewidth = 2.5
+    )
 
-    # Legend removed per user request
+    axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end
@@ -724,6 +767,101 @@ function histogram_minimizers_only(
         colsize!(fig.layout, 1, Relative(0.75))
         colsize!(fig.layout, 2, Relative(0.25))
     end
+
+    return fig
+end
+
+"""
+Plot distance from theoretical minimizers to nearest computed critical points.
+
+For each theoretical minimizer, computes the distance to the nearest critical point
+found by the polynomial method. Shows both average and maximum distances by degree.
+
+# Arguments
+- `results`: Dictionary mapping degrees to analysis results
+- `df_theoretical_mins`: DataFrame containing theoretical minimizer coordinates (x1, x2, ...)
+- `start_degree`: Minimum polynomial degree
+- `end_degree`: Maximum polynomial degree
+- `step`: Step size between degrees (default: 1)
+- `show_legend`: Whether to display legend (default: true)
+
+# Returns
+- `fig`: Makie Figure object
+"""
+function plot_theoretical_minimizer_distances(
+    results,
+    df_theoretical_mins::DataFrame,
+    start_degree::Int,
+    end_degree::Int,
+    step::Int = 1;
+    show_legend::Bool = true
+)
+    # Filter to only include degrees that succeeded
+    all_degrees = start_degree:step:end_degree
+    degrees = filter(d -> haskey(results, d), all_degrees)
+
+    if isempty(degrees)
+        error("No successful results found for degrees $start_degree:$step:$end_degree")
+    end
+
+    # Determine dimension from theoretical minimizers
+    dim = count(col -> startswith(string(col), "x"), names(df_theoretical_mins))
+
+    avg_distances = Float64[]
+    max_distances = Float64[]
+
+    for d in degrees
+        df_computed = results[d].df  # All computed critical points
+        distances = Float64[]
+
+        # For each theoretical minimizer, find distance to nearest computed point
+        for i in 1:nrow(df_theoretical_mins)
+            theo_pt = [df_theoretical_mins[i, Symbol("x$j")] for j in 1:dim]
+            min_dist = Inf
+
+            # Find nearest computed critical point
+            for j in 1:nrow(df_computed)
+                computed_pt = [df_computed[j, Symbol("x$j")] for j in 1:dim]
+                dist = norm(theo_pt - computed_pt)
+                min_dist = min(min_dist, dist)
+            end
+
+            push!(distances, min_dist)
+        end
+
+        # Compute statistics for this degree
+        push!(avg_distances, mean(distances))
+        push!(max_distances, maximum(distances))
+    end
+
+    # Create figure
+    fig = Figure(size = (700, 500), fontsize = 14)
+
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Polynomial Degree",
+        ylabel = "Distance to Theoretical Minimizers",
+        xgridvisible = true,
+        ygridvisible = true,
+        xgridstyle = :dash,
+        ygridstyle = :dash,
+        xticks = degrees
+    )
+
+    scatterlines!(ax, degrees, avg_distances,
+        label = "Average",
+        color = :steelblue,
+        markersize = 10,
+        linewidth = 2.5
+    )
+    scatterlines!(ax, degrees, max_distances,
+        label = "Maximum",
+        color = :crimson,
+        markersize = 10,
+        linewidth = 2.5
+    )
+
+    axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end
