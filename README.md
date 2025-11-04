@@ -13,20 +13,32 @@ GlobtimPlots provides specialized visualization tools for analyzing polynomial a
 
 Supports both **interactive** (GLMakie) and **static** (CairoMakie) plotting backends.
 
-## Installation
+## Getting Started
 
-### From GitLab
+### Installation
 
-```julia
-using Pkg
-Pkg.add(url="https://git.mpi-cbg.de/globaloptim/globtimplots.git")
+GlobtimPlots is **not registered in Julia General**. To use it, set up the entire GlobalOptim ecosystem using the centralized setup repository:
+
+```bash
+# Clone the setup repository
+git clone git@git.mpi-cbg.de:globaloptim/setup.git GlobalOptim
+cd GlobalOptim
+
+# Run automated setup (develops all packages)
+julia setup_globaloptim.jl
 ```
 
-### Development Mode
+This automatically develops all GlobalOptim packages including GlobtimPlots.
+
+**For detailed instructions**, see the [setup repository](https://git.mpi-cbg.de/globaloptim/setup).
+
+### Manual Development (Alternative)
+
+If you prefer manual setup:
 
 ```julia
 using Pkg
-Pkg.develop(path="/path/to/globtimplots")
+Pkg.develop(path="/path/to/GlobalOptim/globtimplots")
 ```
 
 ## Quick Start
