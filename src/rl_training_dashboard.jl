@@ -1,8 +1,8 @@
 """
-RL Training Dashboard for GlobTimRL
+RL Training Dashboard Visualization
 
 Visualization functions for training metrics and strategy comparisons.
-Accepts GlobTimRL metrics structs directly (no file I/O).
+Accepts training metrics as NamedTuples (no package dependencies).
 
 Usage:
     # Single strategy training progress
@@ -13,6 +13,8 @@ Usage:
 
     # Full dashboard with all plots
     fig = create_training_dashboard(training_run)
+
+Note: Uses duck typing - accepts any object with expected fields (no imports required).
 """
 
 using CairoMakie
@@ -20,8 +22,8 @@ using GLMakie
 using Statistics
 using Printf
 
-# Note: We expect EpisodeMetrics, AggregateMetrics, TrainingRun to be available
-# They are defined in GlobTimRL.jl and passed as arguments
+# Note: We expect training data structs with standard fields (duck typing)
+# Functions accept any object with episode_rewards, episode_minimizers, etc.
 
 """
     plot_training_progress(run; resolution=(1200, 800))

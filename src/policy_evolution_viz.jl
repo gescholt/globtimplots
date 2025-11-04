@@ -1,10 +1,13 @@
 """
-Policy Evolution Visualization for GlobTimRL
+Policy Evolution Visualization
 
-Visualizations to understand how the RL policy evolves during training:
-- When does it choose SUBDIVIDE vs INCREASE_DEGREE?
+Visualizations to understand how RL policies evolve during training:
+- When does the policy choose SUBDIVIDE vs INCREASE_DEGREE?
 - How does this decision-making change across episodes?
 - What state features drive these decisions?
+
+Note: Uses duck typing - accepts any training data with expected fields.
+No package dependencies required.
 """
 
 using CairoMakie

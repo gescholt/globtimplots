@@ -14,8 +14,9 @@ using Reexport
 @reexport using CairoMakie
 @reexport using GLMakie
 
-# Note: We use duck typing for data structures from other packages (GlobtimPostProcessing, GlobTimRL)
+# Note: We use duck typing for data structures from other packages
 # This avoids circular dependencies while maintaining API flexibility
+# RL visualization functions accept any NamedTuple with expected fields (no package dependency)
 
 # Include abstract interfaces
 include("interfaces.jl")
@@ -30,7 +31,7 @@ include("experiment_results_plots.jl")  # Cluster experiment results visualizati
 # (These use duck typing for ExperimentResult/CampaignResults types from GlobtimPostProcessing)
 include("CampaignPlotting.jl")
 
-# Include RL training dashboard (accepts GlobTimRL metrics structs)
+# Include RL training dashboard (accepts metrics as NamedTuples - no package dependencies)
 include("rl_training_dashboard.jl")
 include("policy_evolution_viz.jl")
 
