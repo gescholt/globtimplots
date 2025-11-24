@@ -42,7 +42,53 @@ function points_in_hypercube(points::Matrix, bounds::Tuple)
     all(p -> all(bounds[1] .<= p .<= bounds[2]), eachrow(points))
 end
 
-# Adapter functions to work with existing Globtim types
+"""
+    adapt_polynomial_data(globtim_poly) → GenericPolynomialData
+
+Adapt a polynomial approximation object to the GlobtimPlots plotting interface.
+
+This function extracts common fields from polynomial types (like `ApproxPoly` from globtimcore)
+and wraps them in `GenericPolynomialData` which implements the `AbstractPolynomialData` interface.
+
+# Why Use This?
+
+This adapter maintains clean package separation:
+- `globtimcore` defines concrete types (`ApproxPoly`) without depending on plotting packages
+- `globtimplots` defines abstract interfaces (`AbstractPolynomialData`)
+- Users explicitly convert when crossing package boundaries
+
+# Arguments
+- `globtim_poly`: Any object with polynomial approximation data (typically `ApproxPoly`)
+
+# Extracted Fields
+- `coeffs`: Polynomial coefficients
+- `basis`: Basis type (`:chebyshev`, `:monomial`, etc.)
+- `scale_factor`: Domain scaling factor
+- `grid`: Evaluation grid points (Matrix)
+- `z`: Function values at grid points
+- `precision`: Numerical precision information
+- `normalized`: Whether the approximation is normalized
+
+# Returns
+- `GenericPolynomialData <: AbstractPolynomialData`: Wrapped data for plotting
+
+# Example
+```julia
+using Globtim
+using GlobtimPlots: adapt_polynomial_data
+
+# Create polynomial approximation in globtimcore
+pol = ApproxPoly(...)
+
+# Adapt for plotting
+pol_adapted = adapt_polynomial_data(pol)
+
+# Now can use with plotting functions
+fig = cairo_plot_polyapprox_levelset(pol_adapted, ...)
+```
+
+See also: [`adapt_problem_input`](@ref), [`GenericPolynomialData`](@ref), [`AbstractPolynomialData`](@ref)
+"""
 function adapt_polynomial_data(globtim_poly)
     # Extract common fields that plotting functions need
     GenericPolynomialData(
@@ -56,6 +102,55 @@ function adapt_polynomial_data(globtim_poly)
     )
 end
 
+"""
+    adapt_problem_input(globtim_input) → GenericProblemInput
+
+Adapt a problem input object to the GlobtimPlots plotting interface.
+
+This function extracts common fields from problem input types (like `test_input` from globtimcore)
+and wraps them in `GenericProblemInput` which implements the `AbstractProblemInput` interface.
+
+# Why Use This?
+
+This adapter maintains clean package separation:
+- `globtimcore` defines concrete types (`test_input`) without depending on plotting packages
+- `globtimplots` defines abstract interfaces (`AbstractProblemInput`)
+- Users explicitly convert when crossing package boundaries
+
+# Arguments
+- `globtim_input`: Any object with problem input data (typically `test_input`)
+
+# Extracted Fields
+- `dim`: Problem dimension (number of variables)
+- `center`: Domain center point (Vector)
+- `sample_range`: Domain sampling range
+
+# Returns
+- `GenericProblemInput <: AbstractProblemInput`: Wrapped data for plotting
+
+# Example
+```julia
+using Globtim
+using GlobtimPlots: adapt_problem_input
+
+# Create problem input in globtimcore
+TR = test_input(
+    f = x -> sum(x.^2),
+    dim = 2,
+    center = [0.0, 0.0],
+    sample_range = 2.0,
+    degree = 6
+)
+
+# Adapt for plotting
+tr_adapted = adapt_problem_input(TR)
+
+# Now can use with plotting functions
+fig = cairo_plot_polyapprox_levelset(..., tr_adapted, ...)
+```
+
+See also: [`adapt_polynomial_data`](@ref), [`GenericProblemInput`](@ref), [`AbstractProblemInput`](@ref)
+"""
 function adapt_problem_input(globtim_input)
     # Extract common fields that plotting functions need
     GenericProblemInput(
