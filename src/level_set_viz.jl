@@ -9,7 +9,9 @@ The functions work with generic data structures to avoid tight coupling
 with Globtim internals.
 """
 
-using GLMakie
+# NOTE: GLMakie removed from direct import - causes macOS precompilation segfault
+# Users who need 3D interactive plots should: using GLMakie; GLMakie.activate!()
+using Makie
 using StaticArrays
 using DataFrames
 

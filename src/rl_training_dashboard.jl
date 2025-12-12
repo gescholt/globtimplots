@@ -18,7 +18,8 @@ Note: Uses duck typing - accepts any object with expected fields (no imports req
 """
 
 using CairoMakie
-using GLMakie
+# NOTE: GLMakie removed - causes macOS precompilation segfault
+# For interactive plots, users should: using GLMakie; GLMakie.activate!()
 using Statistics
 using Printf
 

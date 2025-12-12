@@ -6,7 +6,8 @@ Automatically generates appropriate visualizations based on available tracking l
 """
 
 using CairoMakie
-using GLMakie
+# NOTE: GLMakie removed - causes macOS precompilation segfault
+# For interactive plots, users should: using GLMakie; GLMakie.activate!()
 
 """
     PlotBackend

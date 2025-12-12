@@ -2,17 +2,19 @@ module GlobtimPlots
 
 # Core plotting dependencies
 using CairoMakie
-using GLMakie
+# NOTE: GLMakie removed - causes precompilation segfault on macOS (GLFW monitor detection bug)
+# Users can load GLMakie separately if needed: using GLMakie; GLMakie.activate!()
 using DataFrames
 using Statistics
 using Dates
 using ProgressMeter
+using ColorSchemes
 
-# Re-export Makie backends so users get them automatically
+# Re-export CairoMakie backend so users get it automatically
 # This allows: using GlobtimPlots; CairoMakie.activate!()
 using Reexport
 @reexport using CairoMakie
-@reexport using GLMakie
+# NOTE: GLMakie not re-exported due to precompilation issues on macOS
 
 # Note: We use duck typing for data structures from other packages
 # This avoids circular dependencies while maintaining API flexibility
@@ -34,6 +36,9 @@ include("CampaignPlotting.jl")
 # Include RL training dashboard (accepts metrics as NamedTuples - no package dependencies)
 include("rl_training_dashboard.jl")
 include("policy_evolution_viz.jl")
+
+# Include subdivision tree visualization (for adaptive refinement from globtimcore)
+include("subdivision_tree_viz.jl")
 
 # Export abstract types
 export AbstractPolynomialData, AbstractProblemInput, AbstractCriticalPointData
@@ -87,6 +92,9 @@ export plot_training_curves_simple, plot_multi_strategy_comparison_simple
 export plot_action_ratio_evolution, plot_action_stacked_area
 export plot_state_action_heatmap, plot_policy_evolution_comparison
 export plot_episode_decision_timeline
+
+# Export subdivision tree visualization functions
+export plot_subdivision_tree, TreeVizStyle, print_tree_summary
 
 # Package version
 const VERSION = v"0.1.0"
