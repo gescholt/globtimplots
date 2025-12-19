@@ -40,6 +40,9 @@ include("policy_evolution_viz.jl")
 # Include subdivision tree visualization (for adaptive refinement from globtimcore)
 include("subdivision_tree_viz.jl")
 
+# Include 1D polynomial approximation visualization
+include("plot_1d_approx.jl")
+
 # Export abstract types
 export AbstractPolynomialData, AbstractProblemInput, AbstractCriticalPointData
 export GenericPolynomialData, GenericProblemInput
@@ -95,6 +98,9 @@ export plot_episode_decision_timeline
 
 # Export subdivision tree visualization functions
 export plot_subdivision_tree, TreeVizStyle, print_tree_summary
+
+# Export 1D polynomial approximation visualization functions
+export plot_1d_polynomial_approximation, plot_1d_comparison
 
 # Package version
 const VERSION = v"0.1.0"
