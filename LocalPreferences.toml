@@ -1,5 +1,0 @@
-# Skip GLMakie precompile workload to avoid macOS GLFW segfault
-# See: https://github.com/MakieOrg/Makie.jl/issues/4571
-# See: https://julialang.github.io/PrecompileTools.jl/stable/
-[GLMakie]
-precompile_workload = false

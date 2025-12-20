@@ -47,7 +47,18 @@ build/
 bin/
 
 # GitLab environment configuration
-.env.gitlab.local# .glab-env is tracked (sources .env.gitlab.local which is gitignored)
+.env.gitlab.local
+
+# Claude Code and internal configs (not for public release)
+.claude/
+.claudemem
+.glab-env
+.gitlab_config
+.gitlab-ci.yml
+LocalPreferences.toml
+
+# GitLab templates (internal)
+.gitlab/
 
 # Test scripts in root (should be in test/ or examples/)
 test_*.jl
