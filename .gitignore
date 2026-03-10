@@ -1,0 +1,79 @@
+# Julia
+*.jl.*.cov
+*.jl.cov
+*.jl.mem
+deps/deps.jl
+/Manifest.toml
+/dev/
+
+# Documentation builds
+docs/build/
+docs/site/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+.vscode/
+*.swp
+*.swo
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Local Julia depot
+.julia/
+
+# Test artifacts
+test-results.xml
+coverage/
+
+# Build artifacts
+build/
+bin/
+
+# GitLab environment configuration
+.env.gitlab.local
+
+# Claude Code and internal configs (not for public release)
+.claude/
+.claudemem
+.glab-env
+.gitlab_config
+.gitlab-ci.yml
+LocalPreferences.toml
+
+# GitLab templates (internal)
+.gitlab/
+
+# Test scripts in root (should be in test/ or examples/)
+test_*.jl
+!test/test_*.jl
+
+# Output directories (temporary plotting outputs)
+*_plots_*/
+output_plots/
+test_graphics/
+test/visual_output/
+
+# Internal setup documentation (not for public release)
+archived/
+tools/
+GITLAB_SETUP.md
+setup_gitlab.md
+docs/infrastructure_gitlab.md
+docs/Manifest.toml
