@@ -19,18 +19,9 @@ using Random: MersenneTwister
 
 # --- Shared constants & helpers -----------------------------------------------
 
-# Type colors matching the existing analysis_plots.jl conventions
-const CP_TYPE_COLORS = Dict(
-    :min => :forestgreen,
-    :max => :crimson,
-    :saddle => :steelblue,
-)
-
-const CP_TYPE_LABELS = Dict(
-    :min => "Minima",
-    :max => "Maxima",
-    :saddle => "Saddles",
-)
+# CP type colors/labels come from CP_TYPE_TABLE in interfaces.jl (single source of truth).
+# Plural labels for capture analysis context:
+const _CP_PLURAL_LABELS = Dict(:min => "Minima", :max => "Maxima", :saddle => "Saddles")
 
 """
 Compute horizontal offsets for dodged groups centered at 0.
@@ -284,8 +275,8 @@ function plot_capture_convergence(
         is_first = ti == 1
         is_last = ti == n_types
         type_count = count(x -> x == cp_type, known.types)
-        type_label = CP_TYPE_LABELS[cp_type]
-        type_color = CP_TYPE_COLORS[cp_type]
+        type_label = _CP_PLURAL_LABELS[cp_type]
+        type_color = CP_TYPE_TABLE[cp_type].color
 
         ax = Axis(panel1_gl[ti, 1];
             ylabel = "Distance to nearest CP",
@@ -355,9 +346,9 @@ function plot_capture_convergence(
     end
 
     # Legend for Panel 1
-    legend_elements = [MarkerElement(; color = CP_TYPE_COLORS[t], marker = :rect, markersize = 12)
+    legend_elements = [MarkerElement(; color = CP_TYPE_TABLE[t].color, marker = CP_TYPE_TABLE[t].marker, markersize = 12)
                        for t in all_types]
-    legend_labels = [CP_TYPE_LABELS[t] * " ($(count(x -> x == t, known.types)))" for t in all_types]
+    legend_labels = [_CP_PLURAL_LABELS[t] * " ($(count(x -> x == t, known.types)))" for t in all_types]
     Legend(fig[1, 2], legend_elements, legend_labels; _legend_kwargs(; labelsize=11)...)
 
     # --- Panel 2 (mothballed): Capture Rate Bars --------------------------------
@@ -572,8 +563,8 @@ function plot_capture_sparsification_combined(
         is_first = ti == 1
         is_last = ti == n_types
         type_count = count(x -> x == cp_type, known.types)
-        type_label = CP_TYPE_LABELS[cp_type]
-        type_color = CP_TYPE_COLORS[cp_type]
+        type_label = _CP_PLURAL_LABELS[cp_type]
+        type_color = CP_TYPE_TABLE[cp_type].color
 
         ax = Axis(panel_a_gl[ti, 1];
             ylabel = "Distance to nearest CP",

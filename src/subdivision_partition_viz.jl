@@ -127,28 +127,8 @@ Minimum degree: scalar as-is, vector → `minimum(d)`.
 min_degree(d::Integer) = Int(d)
 min_degree(d::AbstractVector) = minimum(Int.(d))
 
-# ── Canonical CP type → (color, marker, label) table ─────────────────────────
-# Single source of truth for CP type appearance across all viz functions.
-# Key: Symbol or String matching the CP type.  Value: (color, marker, label).
-
-const CP_TYPE_TABLE = (
-    min    = (color = :green3,     marker = :circle,    label = "Min"),
-    saddle = (color = :dodgerblue, marker = :dtriangle, label = "Saddle"),
-    max    = (color = :red,        marker = :rect,      label = "Max"),
-)
-
-"""
-    cp_type_appearance(cp_type) → (color::Symbol, marker::Symbol)
-
-Look up color and marker for a CP type (Symbol or String).
-Returns `(:magenta, :diamond)` for unknown types.
-"""
-function cp_type_appearance(cp_type::Symbol)
-    haskey(CP_TYPE_TABLE, cp_type) || return (:magenta, :diamond)
-    entry = CP_TYPE_TABLE[cp_type]
-    return (entry.color, entry.marker)
-end
-cp_type_appearance(cp_type::AbstractString) = cp_type_appearance(Symbol(cp_type))
+# CP_TYPE_TABLE, cp_type_appearance, and normalize_cp_key are defined in
+# interfaces.jl (single source of truth for CP type appearance).
 
 """
     _in_domain(p, lo, hi) → Bool

@@ -162,7 +162,7 @@ end
         tree::SubdivisionTree, f;
         resolution::Int = 200,
         log_scale::Bool = true,
-        colormap::Symbol = :inferno,
+        colormap::Symbol = :viridis,
     ) → Figure
 
 Launch an interactive GLMakie window showing `|f(p) - poly(p)|` across the
@@ -181,13 +181,13 @@ subdivision domain. Requires GLMakie to be loaded and active.
 ## Keyword Arguments
 - `resolution`: Grid points per axis (default 200)
 - `log_scale`: Start with log₁₀ scale (default true)
-- `colormap`: Makie colormap (default `:inferno`)
+- `colormap`: Makie colormap (default `:viridis`)
 """
 function interactive_error_explorer(
     tree::SubdivisionTree, f;
     resolution::Int = 200,
     log_scale::Bool = true,
-    colormap::Symbol = :inferno,
+    colormap::Symbol = :viridis,
 )
     # Verify we have a 2D tree
     root_bounds = get_bounds(tree.subdomains[tree.root_id])

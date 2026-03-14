@@ -210,7 +210,7 @@ function plot_all_eigenvalues(
 
     # Separate indices by critical point type
     point_types = [:minimum, :saddle, :maximum]
-    type_colors = Dict(:minimum => :darkgreen, :saddle => :darkorange, :maximum => :darkred)
+    # CP type colors from shared CP_TYPE_TABLE (interfaces.jl)
 
     type_indices = Dict()
     for ptype in point_types
@@ -261,7 +261,7 @@ function plot_all_eigenvalues(
 
     for (subplot_idx, ptype) in enumerate(available_types)
         sorted_indices = type_indices[ptype]
-        type_color = type_colors[ptype]
+        type_color = CP_TYPE_TABLE[normalize_cp_key(ptype)].color
 
         plot_title =
             sort_by == :abs_magnitude ?
@@ -326,7 +326,7 @@ function plot_all_eigenvalues(
             color = :black,
             marker = :circle,
             markersize = 10,
-            strokecolor = type_colors[ptype],
+            strokecolor = CP_TYPE_TABLE[normalize_cp_key(ptype)].color,
             strokewidth = 2
         ) for ptype in available_types
     ]
@@ -404,18 +404,16 @@ function plot_raw_vs_refined_eigenvalues(
 
     fig = Figure(size = something(fig_size, (1400, 600 * n_types)))
 
-    type_colors = Dict(
-        :minimum => :darkgreen,
-        :saddle => :darkorange,
-        :maximum => :darkred,
-        :all => :darkblue
-    )
+    # CP type colors from shared CP_TYPE_TABLE (interfaces.jl)
+    # :all is a special aggregate key, not a real CP type — use :darkblue
+    _all_color = :darkblue
 
     eigenval_colors = [:red, :blue, :green, :orange, :purple]
 
     for (subplot_idx, ptype) in enumerate(available_types)
         type_matches = type_groups[ptype]
-        type_color = get(type_colors, ptype, :darkblue)
+        nk = normalize_cp_key(ptype)
+        type_color = haskey(CP_TYPE_TABLE, nk) ? CP_TYPE_TABLE[nk].color : _all_color
 
         if sort_by == :euclidean_distance
             sort!(type_matches, by = x -> x[3])

@@ -4,6 +4,52 @@
 using DataFrames
 using LinearAlgebra
 
+# ── Canonical CP type appearance ──────────────────────────────────────────────
+# Single source of truth for CP type → (color, marker, label) across all viz.
+
+"""
+    CP_TYPE_TABLE
+
+Canonical named tuple mapping CP type keys (`:min`, `:saddle`, `:max`) to
+their visual appearance `(color, marker, label)`.  All visualization code
+should use this table (or the `cp_type_appearance` helper) instead of
+defining local color/marker constants.
+"""
+const CP_TYPE_TABLE = (
+    min    = (color = :green3,     marker = :circle,    label = "Min"),
+    saddle = (color = :dodgerblue, marker = :dtriangle, label = "Saddle"),
+    max    = (color = :red,        marker = :rect,      label = "Max"),
+)
+
+"""
+    normalize_cp_key(k::Symbol) → Symbol
+
+Normalize verbose CP type keys to the canonical short form used by
+`CP_TYPE_TABLE`:  `:minimum` → `:min`,  `:maximum` → `:max`.
+All other keys pass through unchanged.
+"""
+function normalize_cp_key(k::Symbol)
+    k === :minimum && return :min
+    k === :maximum && return :max
+    return k
+end
+normalize_cp_key(k::AbstractString) = normalize_cp_key(Symbol(k))
+
+"""
+    cp_type_appearance(cp_type) → (color::Symbol, marker::Symbol)
+
+Look up color and marker for a CP type (Symbol or String).
+Accepts both short (`:min`) and long (`:minimum`) key forms.
+Returns `(:magenta, :diamond)` for unknown types.
+"""
+function cp_type_appearance(cp_type::Symbol)
+    key = normalize_cp_key(cp_type)
+    haskey(CP_TYPE_TABLE, key) || return (:magenta, :diamond)
+    entry = CP_TYPE_TABLE[key]
+    return (entry.color, entry.marker)
+end
+cp_type_appearance(cp_type::AbstractString) = cp_type_appearance(Symbol(cp_type))
+
 # Core abstract types
 
 """

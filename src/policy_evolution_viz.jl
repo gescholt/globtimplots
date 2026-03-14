@@ -14,12 +14,12 @@ using CairoMakie
 using Statistics
 
 """
-    plot_action_ratio_evolution(run; resolution=(1000, 600))
+    plot_action_ratio_evolution(run; fig_size=(1000, 600))
 
 Plot the ratio of SUBDIVIDE to INCREASE_DEGREE actions across episodes.
 Shows whether agent learns to prefer subdivision or degree increases.
 """
-function plot_action_ratio_evolution(run; resolution=(1000, 600))
+function plot_action_ratio_evolution(run; fig_size=(1000, 600))
     episodes = run.episodes
     n_episodes = length(episodes)
 
@@ -39,7 +39,7 @@ function plot_action_ratio_evolution(run; resolution=(1000, 600))
         smoothed = ratios
     end
 
-    fig = Figure(resolution=resolution)
+    fig = Figure(size=fig_size)
 
     strategy_name = episodes[1].strategy_name
     func_name = episodes[1].function_name
@@ -75,11 +75,11 @@ function plot_action_ratio_evolution(run; resolution=(1000, 600))
 end
 
 """
-    plot_action_stacked_area(run; resolution=(1000, 600))
+    plot_action_stacked_area(run; fig_size=(1000, 600))
 
 Stacked area plot showing the proportion of different actions across episodes.
 """
-function plot_action_stacked_area(run; resolution=(1000, 600))
+function plot_action_stacked_area(run; fig_size=(1000, 600))
     episodes = run.episodes
     n_episodes = length(episodes)
 
@@ -105,7 +105,7 @@ function plot_action_stacked_area(run; resolution=(1000, 600))
 
     ep_nums = 1:n_episodes
 
-    fig = Figure(resolution=resolution)
+    fig = Figure(size=fig_size)
 
     strategy_name = episodes[1].strategy_name
     func_name = episodes[1].function_name
@@ -138,7 +138,7 @@ function plot_action_stacked_area(run; resolution=(1000, 600))
 end
 
 """
-    plot_state_action_heatmap(state_action_pairs; resolution=(1200, 800))
+    plot_state_action_heatmap(state_action_pairs; fig_size=(1200, 800))
 
 Heatmap showing which actions are taken in which states.
 Requires state-action pair tracking during training.
@@ -147,7 +147,7 @@ Requires state-action pair tracking during training.
 - `state_action_pairs`: Vector of (state, action) tuples collected during episodes
   where state = [width, center, l2_error, degree, cond]
 """
-function plot_state_action_heatmap(state_action_pairs; resolution=(1200, 800))
+function plot_state_action_heatmap(state_action_pairs; fig_size=(1200, 800))
     if isempty(state_action_pairs)
         error("No state-action pairs provided")
     end
@@ -194,7 +194,7 @@ function plot_state_action_heatmap(state_action_pairs; resolution=(1200, 800))
     total_counts = subdivide_counts .+ degree_counts
     preference = (subdivide_counts .- degree_counts) ./ max.(total_counts, 1)
 
-    fig = Figure(resolution=resolution)
+    fig = Figure(size=fig_size)
 
     Label(fig[0, :], text="Policy State-Action Map: SUBDIVIDE vs INCREASE_DEGREE",
           fontsize=20, font=:bold)
@@ -226,11 +226,11 @@ function plot_state_action_heatmap(state_action_pairs; resolution=(1200, 800))
 end
 
 """
-    plot_policy_evolution_comparison(runs::Vector; resolution=(1400, 1000))
+    plot_policy_evolution_comparison(runs::Vector; fig_size=(1400, 1000))
 
 Compare how different strategies evolve their action preferences across training.
 """
-function plot_policy_evolution_comparison(runs::Vector; resolution=(1400, 1000))
+function plot_policy_evolution_comparison(runs::Vector; fig_size=(1400, 1000))
     if isempty(runs)
         error("No runs to compare")
     end
@@ -239,7 +239,7 @@ function plot_policy_evolution_comparison(runs::Vector; resolution=(1400, 1000))
     strategy_names = [run.episodes[1].strategy_name for run in runs]
     colors = Makie.wong_colors()
 
-    fig = Figure(resolution=resolution)
+    fig = Figure(size=fig_size)
 
     func_name = runs[1].episodes[1].function_name
     Label(fig[0, :], text="Policy Evolution Comparison on $func_name",
@@ -322,7 +322,7 @@ function plot_policy_evolution_comparison(runs::Vector; resolution=(1400, 1000))
 end
 
 """
-    plot_episode_decision_timeline(episode_metrics, state_action_history; resolution=(1200, 600))
+    plot_episode_decision_timeline(episode_metrics, state_action_history; fig_size=(1200, 600))
 
 Plot the sequence of decisions made during a single episode.
 Shows when SUBDIVIDE vs INCREASE_DEGREE was chosen and in what state.
@@ -333,7 +333,7 @@ Shows when SUBDIVIDE vs INCREASE_DEGREE was chosen and in what state.
 """
 function plot_episode_decision_timeline(episode_metrics,
                                        state_action_history;
-                                       resolution=(1200, 600))
+                                       fig_size=(1200, 600))
     if isempty(state_action_history)
         error("No state-action history provided")
     end
@@ -346,7 +346,7 @@ function plot_episode_decision_timeline(episode_metrics,
     l2_errors = [s[3] for s in states]
     degrees = [Int(s[4]) for s in states]
 
-    fig = Figure(resolution=resolution)
+    fig = Figure(size=fig_size)
 
     strategy = episode_metrics.strategy_name
     func = episode_metrics.function_name

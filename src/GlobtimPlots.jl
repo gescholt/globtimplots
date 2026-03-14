@@ -149,7 +149,7 @@ export plot_2d_partition, plot_l2_trajectories, PartitionStyle
 # Export subdivision partition visualization functions
 export plot_subdivision_partition, plot_subdivision_on_levelset, SubdivisionPartitionStyle
 export format_degree_label, effective_degree, min_degree
-export CP_TYPE_TABLE, cp_type_appearance
+export CP_TYPE_TABLE, cp_type_appearance, normalize_cp_key
 
 # Export subdivision error heatmap functions
 export plot_subdivision_error_heatmap, find_containing_leaf, compute_error_grid

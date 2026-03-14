@@ -235,7 +235,8 @@ function cairo_plot_polyapprox_levelset(
     z_limits::Union{Nothing, Tuple{Float64, Float64}} = nothing,
     chebyshev_levels::Bool = false,
     num_levels::Int = 30,
-    show_captured::Bool = true
+    show_captured::Bool = true,
+    colormap::Symbol = :viridis
 )
     # Type-stable coordinate transformation using multiple dispatch
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
@@ -283,7 +284,7 @@ function cairo_plot_polyapprox_levelset(
         end
 
         # Create contour plot
-        chosen_colormap = :inferno
+        chosen_colormap = colormap
         CairoMakie.contourf!(ax, x_unique, y_unique, Z, colormap = chosen_colormap, levels = levels)
 
         # Initialize empty array for legend entries

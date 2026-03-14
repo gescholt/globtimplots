@@ -75,7 +75,7 @@ end
         tree::SubdivisionTree, f;
         resolution::Int = 200,
         log_scale::Bool = true,
-        colormap::Symbol = :inferno,
+        colormap::Symbol = :viridis,
         show_boundaries::Bool = true,
         boundary_color = :white,
         boundary_width::Float64 = 1.0,
@@ -102,7 +102,7 @@ are not serialized to JSON).
 # Keyword Arguments
 - `resolution`: Grid points per axis (default 200)
 - `log_scale`: If true, plot log₁₀(error) (default true)
-- `colormap`: Makie colormap (default `:inferno`)
+- `colormap`: Makie colormap (default `:viridis`)
 - `show_boundaries`: Overlay subdomain boundaries (default true)
 - `boundary_color`: Color for boundary lines (default `:white`)
 - `boundary_width`: Line width for boundaries (default 1.0)
@@ -117,7 +117,7 @@ function plot_subdivision_error_heatmap(
     tree::SubdivisionTree, f;
     resolution::Int = 200,
     log_scale::Bool = true,
-    colormap::Symbol = :inferno,
+    colormap::Symbol = :viridis,
     show_boundaries::Bool = true,
     boundary_color = :white,
     boundary_width::Float64 = 1.0,
