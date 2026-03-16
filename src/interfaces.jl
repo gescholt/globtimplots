@@ -16,9 +16,14 @@ should use this table (or the `cp_type_appearance` helper) instead of
 defining local color/marker constants.
 """
 const CP_TYPE_TABLE = (
-    min    = (color = :green3,     marker = :circle,    label = "Min"),
-    saddle = (color = :dodgerblue, marker = :dtriangle, label = "Saddle"),
-    max    = (color = :red,        marker = :rect,      label = "Max"),
+    min              = (color = :green3,     marker = :circle,    label = "Min"),
+    saddle           = (color = :dodgerblue, marker = :dtriangle, label = "Saddle"),
+    max              = (color = :red,        marker = :rect,      label = "Max"),
+    degenerate       = (color = :magenta,    marker = :diamond,   label = "Degenerate"),
+    degenerate_min   = (color = :green3,     marker = :pentagon,  label = "Degen. Min"),
+    degenerate_max   = (color = :red,        marker = :pentagon,  label = "Degen. Max"),
+    degenerate_saddle= (color = :dodgerblue, marker = :pentagon,  label = "Degen. Saddle"),
+    unknown          = (color = :gray50,     marker = :diamond,   label = "Unknown"),
 )
 
 """
