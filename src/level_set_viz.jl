@@ -398,6 +398,251 @@ function create_level_set_animation(
     return fig
 end
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Pre-computed values overloads
+#
+# These methods accept an already-evaluated `values::Array{T}` instead of a
+# callable `f`, avoiding redundant (and potentially expensive) sequential
+# re-evaluation. Useful when values were computed via parallel grid evaluation
+# (e.g., `evaluate_grid_threaded` from Dynamic_objectives).
+#
+# Dispatch is unambiguous: Array{T} (these methods) vs callable (existing methods).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"""
+    create_level_set_visualization(
+        values::Array{T},
+        grid::Array{SVector{3,T},3},
+        df::Union{DataFrame,Nothing},
+        z_range::Tuple{T,T},
+        params::VisualizationParameters{T} = VisualizationParameters{T}()
+    ) where {T<:AbstractFloat}
+
+Create an interactive 3D level set visualization from pre-computed grid values.
+
+Same as the `f`-based overload, but skips function evaluation — uses the provided
+`values` array directly. The `values` array must have the same shape as `grid`.
+
+`Inf` and `NaN` entries in `values` are treated as missing (excluded from level sets).
+"""
+function create_level_set_visualization(
+    values::Array{T},
+    grid::Array{SVector{3, T}, 3},
+    df::Union{DataFrame, Nothing},
+    z_range::Tuple{T, T},
+    params::VisualizationParameters{T} = VisualizationParameters{T}()
+) where {T <: AbstractFloat}
+    size(grid) == size(values) ||
+        throw(DimensionMismatch("Grid shape $(size(grid)) != values shape $(size(values))"))
+
+    grid_points = vec(grid)
+    valid_points = filter(p -> !any(isnan, p), grid_points)
+    isempty(valid_points) && throw(ArgumentError("Grid contains no valid points"))
+
+    z_min, z_max = z_range
+    (isnan(z_min) || isnan(z_max)) && throw(ArgumentError("Invalid z_range"))
+
+    fig = Figure(size = params.fig_size)
+    ax = Axis3(fig[1, 1], xlabel = "x₁", ylabel = "x₂", zlabel = "x₃")
+
+    x_range = extrema(p[1] for p in valid_points)
+    y_range = extrema(p[2] for p in valid_points)
+    z_range_grid = extrema(p[3] for p in valid_points)
+
+    limits!(ax, x_range..., y_range..., z_range_grid...)
+
+    level_slider =
+        Slider(fig[2, 1], range = range(z_min, z_max, length = 1000), startvalue = z_min)
+
+    Label(
+        fig[3, 1],
+        @lift(string("Level: ", round($(level_slider.value), digits = 3))),
+        tellwidth = false
+    )
+
+    level_points = Observable(Point3f[])
+    data_points = Observable(Point3f[])
+
+    scatter!(
+        ax,
+        level_points,
+        color = :blue,
+        markersize = 6,
+        alpha = 0.7,
+        label = "Level Set"
+    )
+
+    if !isnothing(df)
+        scatter!(
+            ax,
+            data_points,
+            color = :darkorange,
+            marker = :diamond,
+            markersize = 30,
+            label = "Data Points"
+        )
+    end
+
+    function update_visualization(level::T) where {T <: AbstractFloat}
+        try
+            level_data = prepare_level_set_data(
+                grid,
+                values,
+                level,
+                tolerance = params.point_tolerance
+            )
+
+            formatted_data = to_makie_format(level_data)
+
+            new_points = Point3f[]
+            if !isempty(formatted_data.xyz[1])
+                for (x, y, z) in zip(formatted_data.xyz...)
+                    if !any(isnan, (x, y, z))
+                        push!(new_points, Point3f(x, y, z))
+                    end
+                end
+            end
+            level_points[] = new_points
+
+            if !isnothing(df)
+                visible_points = Point3f[]
+                for row in eachrow(df)
+                    if !any(isnan, [row.x1, row.x2, row.x3, row.z]) &&
+                       abs(row.z - level) <= params.point_tolerance
+                        push!(visible_points, Point3f(row.x1, row.x2, row.x3))
+                    end
+                end
+                data_points[] = visible_points
+            end
+        catch e
+            @error "Error in visualization update" exception = e
+            rethrow(e)
+        end
+    end
+
+    on(level_slider.value) do level
+        update_visualization(level)
+    end
+
+    update_visualization(z_min)
+    axislegend(ax, position = :rt)
+
+    return fig
+end
+
+"""
+    create_level_set_animation(
+        values::Array{T},
+        grid::Array{SVector{3,T},3},
+        df::Union{DataFrame,Nothing},
+        z_range::Tuple{T,T},
+        params::VisualizationParameters{T} = VisualizationParameters{T}();
+        fps::Int = 30,
+        duration::Int = 20,
+        output_file::String = "level_set_animation.mp4"
+    ) where {T<:AbstractFloat}
+
+Create an animated level set visualization from pre-computed grid values.
+
+Same as the `f`-based overload, but skips function evaluation — uses the provided
+`values` array directly. The `values` array must have the same shape as `grid`.
+"""
+function create_level_set_animation(
+    values::Array{T},
+    grid::Array{SVector{3, T}, 3},
+    df::Union{DataFrame, Nothing},
+    z_range::Tuple{T, T},
+    params::VisualizationParameters{T} = VisualizationParameters{T}();
+    fps::Int = 30,
+    duration::Int = 20,
+    output_file::String = "level_set_animation.mp4"
+) where {T <: AbstractFloat}
+    size(grid) == size(values) ||
+        throw(DimensionMismatch("Grid shape $(size(grid)) != values shape $(size(values))"))
+
+    grid_points = vec(grid)
+    valid_points = filter(p -> !any(isnan, p), grid_points)
+
+    z_min, z_max = z_range
+
+    fig = Figure(size = params.fig_size)
+    ax = Axis3(
+        fig[1, 1],
+        title = "Level Set Visualization",
+        xlabel = "x₁",
+        ylabel = "x₂",
+        zlabel = "x₃"
+    )
+
+    # Set up initial ranges and limits
+    x_range = extrema(p[1] for p in valid_points)
+    y_range = extrema(p[2] for p in valid_points)
+    z_range_grid = extrema(p[3] for p in valid_points)
+    limits!(ax, x_range..., y_range..., z_range_grid...)
+
+    level_points = Observable(Point3f[])
+    data_points = Observable(Point3f[])
+
+    scatter!(ax, level_points, color = :blue, markersize = 2, label = "Level Set")
+
+    if !isnothing(df)
+        scatter!(
+            ax,
+            data_points,
+            color = :darkorange,
+            marker = :diamond,
+            markersize = 20,
+            label = "Data Points"
+        )
+    end
+
+    function update_visualization(level::T) where {T <: AbstractFloat}
+        level_data =
+            prepare_level_set_data(grid, values, level, tolerance = params.point_tolerance)
+
+        formatted_data = to_makie_format(level_data)
+
+        new_points = Point3f[]
+        if !isempty(formatted_data.xyz[1])
+            for (x, y, z) in zip(formatted_data.xyz...)
+                if !any(isnan, (x, y, z))
+                    push!(new_points, Point3f(x, y, z))
+                end
+            end
+        end
+        level_points[] = new_points
+
+        if !isnothing(df)
+            visible_points = Point3f[]
+            for row in eachrow(df)
+                if !any(isnan, [row.x1, row.x2, row.x3, row.z]) &&
+                   abs(row.z - level) <= params.point_tolerance
+                    push!(visible_points, Point3f(row.x1, row.x2, row.x3))
+                end
+            end
+            data_points[] = visible_points
+        end
+    end
+
+    axislegend(ax, position = :rt)
+
+    # Animation parameters
+    total_frames = fps * duration
+    theta = range(0, pi, length = total_frames)
+    levels = range(z_min, z_max, length = total_frames)
+
+    record(fig, output_file, 1:total_frames; framerate = fps) do frame
+        # Update camera position
+        ax.azimuth[] = theta[frame]
+
+        # Update level set
+        update_visualization(levels[frame])
+    end
+
+    @info "Animation saved to: $output_file"
+    return fig
+end
+
 # Export functions
 export LevelSetData, VisualizationParameters
 export prepare_level_set_data, to_makie_format, plot_level_set
