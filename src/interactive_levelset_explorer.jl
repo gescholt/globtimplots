@@ -58,6 +58,30 @@ function _format_eigenvalues(eigs)
     return "  eigs=[$(join(parts, ","))]"
 end
 
+"""
+    _gradient_method_label(method::Symbol) -> String
+
+Human-readable label for the differentiation backend.
+"""
+function _gradient_method_label(method::Symbol)
+    method == :finitediff   && return "FiniteDiff"
+    method == :forwarddiff  && return "ForwardDiff"
+    return String(method)
+end
+
+"""
+    _gradient_method_short(method::Symbol) -> String
+
+Short tag for log lines, e.g. "[FD] " or "[AD] ". Includes trailing space
+so it concatenates cleanly with `-> cp_type` in log output.
+"""
+function _gradient_method_short(method::Symbol)
+    method == :finitediff   && return "[FD] "
+    method == :forwarddiff  && return "[AD] "
+    method == :unknown      && return ""
+    return "[$(method)] "
+end
+
 # ── Helpers for zoom-based contour refinement ────────────────────────────────
 
 function _compute_levelset_grid(f, xs, ys)
@@ -853,6 +877,11 @@ function interactive_levelset_explorer(
                             stroke_w   = result.converged ? 1.5 : 2.5
 
                             # Build tooltip string for DataInspector
+                            grad_method_label = if hasproperty(result, :gradient_method) && result.gradient_method != :unknown
+                                _gradient_method_label(result.gradient_method)
+                            else
+                                ""
+                            end
                             tooltip_parts = [
                                 "Type: $(result.cp_type)",
                                 @sprintf("f = %.6e", result.objective_value),
@@ -861,6 +890,9 @@ function interactive_levelset_explorer(
                                 "iters = $(result.iterations)",
                                 result.converged ? "converged" : "NOT converged",
                             ]
+                            if !isempty(grad_method_label)
+                                push!(tooltip_parts, "Gradient: $grad_method_label")
+                            end
                             if hasproperty(result, :eigenvalues) && !isempty(result.eigenvalues)
                                 push!(tooltip_parts, "eigs = [$(join([@sprintf("%+.2e", e) for e in result.eigenvalues], ", "))]")
                             end
@@ -888,15 +920,28 @@ function interactive_levelset_explorer(
                             if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
                                 cond_str *= @sprintf("  λ_min=%+.1e", result.min_eigenvalue)
                             end
-                            log_msg = @sprintf("  #%d -> %s  f=%.3e  ||grad||=%.1e  iters=%d  p=[%.5f, %.5f]%s%s",
-                                i, result.cp_type, result.objective_value, result.gradient_norm,
+                            grad_tag = if hasproperty(result, :gradient_method)
+                                _gradient_method_short(result.gradient_method)
+                            else
+                                ""
+                            end
+                            log_msg = @sprintf("  #%d %s-> %s  f=%.3e  ||grad||=%.1e  iters=%d  p=[%.5f, %.5f]%s%s",
+                                i, grad_tag, result.cp_type, result.objective_value, result.gradient_norm,
                                 result.iterations, result.point[1], result.point[2], eig_str, cond_str)
                             _log!(log_lines, log_msg)
                             conv_str = result.converged ? "" : "  [NOT CONVERGED]"
                             println("    ", log_msg, conv_str)
                         end
 
-                        summary_msg = "$action $n_ok/$(length(start_points)) CPs [$mode_str]"
+                        # Determine gradient method label for summary (from first successful result)
+                        grad_summary = ""
+                        for o in outcomes
+                            if o.result !== nothing && hasproperty(o.result, :gradient_method) && o.result.gradient_method != :unknown
+                                grad_summary = "/" * _gradient_method_label(o.result.gradient_method)
+                                break
+                            end
+                        end
+                        summary_msg = "$action $n_ok/$(length(start_points)) CPs [$mode_str$grad_summary]"
                         info_obs[] = summary_msg
                         _log!(log_lines, summary_msg)
                         println("  ", summary_msg)
