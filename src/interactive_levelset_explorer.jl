@@ -695,7 +695,14 @@ function interactive_levelset_explorer(
     end
 
     # ── Refine / Re-Refine button ───────────────────────────────────────────
+    # Runs refinement on a background thread (Threads.@spawn) to avoid blocking
+    # the Makie event loop and corrupting the macOS autorelease pool. All Makie
+    # scene mutations (scatter!, lines!, observable updates) happen in a single
+    # @async block after computation completes.
+    _refining = Ref(false)   # guard against re-entry while background task runs
+
     on(refine_sel_btn.clicks) do _
+        _refining[] && return   # already running
         sel = selected_indices[]
         user_pts = user_placed_pts[]
 
@@ -724,141 +731,196 @@ function interactive_levelset_explorer(
 
         is_rerefine = isempty(new_points) && !isempty(last_refined_starts[])
 
-        # Build the refine function based on mode
+        # Snapshot slider values before spawning (observables may change during)
+        snap_newton_tol    = newton_tol_obs[]
+        snap_accept_tol    = newton_accept_tol_obs[]
+        snap_maxiter       = round(Int, newton_maxiter_obs[])
+        snap_hessian_tol   = hessian_tol_obs[]
+        snap_step_fraction = newton_step_obs[]
+
+        # Build the refine function based on mode (captured snapshot values)
         if has_single
             mode_str = "Newton"
             refine_fn = pt -> refine(pt;
-                tol=newton_tol_obs[], accept_tol=newton_accept_tol_obs[],
-                max_iterations=round(Int, newton_maxiter_obs[]),
-                hessian_tol=hessian_tol_obs[],
-                trust_radius_fraction=newton_step_obs[])
+                tol=snap_newton_tol, accept_tol=snap_accept_tol,
+                max_iterations=snap_maxiter,
+                hessian_tol=snap_hessian_tol,
+                trust_radius_fraction=snap_step_fraction)
         else
             mode = mode_obs[]
             mode_str = mode == :newton ? "Newton" : mode == :lbfgs ? "LBFGS" : "NelderMead"
+            snap_f_abstol  = optim_f_abstol_obs[]
+            snap_x_abstol  = optim_x_abstol_obs[]
+            snap_optim_max = round(Int, optim_maxiter_obs[])
+            snap_lbfgs_step = lbfgs_step_obs[]
             refine_fn = if mode == :newton
                 pt -> refine_newton(pt;
-                    tol=newton_tol_obs[], accept_tol=newton_accept_tol_obs[],
-                    max_iterations=round(Int, newton_maxiter_obs[]),
-                    hessian_tol=hessian_tol_obs[],
-                    trust_radius_fraction=newton_step_obs[])
+                    tol=snap_newton_tol, accept_tol=snap_accept_tol,
+                    max_iterations=snap_maxiter,
+                    hessian_tol=snap_hessian_tol,
+                    trust_radius_fraction=snap_step_fraction)
             elseif mode == :lbfgs
                 pt -> refine_optim(pt;
-                    f_abstol=optim_f_abstol_obs[], x_abstol=optim_x_abstol_obs[],
-                    max_iterations=round(Int, optim_maxiter_obs[]),
-                    hessian_tol=hessian_tol_obs[],
-                    method=:lbfgs, step_size=lbfgs_step_obs[])
+                    f_abstol=snap_f_abstol, x_abstol=snap_x_abstol,
+                    max_iterations=snap_optim_max,
+                    hessian_tol=snap_hessian_tol,
+                    method=:lbfgs, step_size=snap_lbfgs_step)
             else
                 pt -> refine_optim(pt;
-                    f_abstol=optim_f_abstol_obs[], x_abstol=optim_x_abstol_obs[],
-                    max_iterations=round(Int, optim_maxiter_obs[]),
-                    hessian_tol=hessian_tol_obs[],
+                    f_abstol=snap_f_abstol, x_abstol=snap_x_abstol,
+                    max_iterations=snap_optim_max,
+                    hessian_tol=snap_hessian_tol,
                     method=:neldermead)
             end
         end
 
-        n_ok = 0
         action = is_rerefine ? "Re-refining" : "Refining"
+        _refining[] = true
+        info_obs[] = "$action $(length(start_points)) CPs [$mode_str]..."
         _log!(log_lines, "$action $(length(start_points)) CPs [$mode_str]...")
         println("\n  $action $(length(start_points)) CPs [$mode_str]")
 
-        for (i, pt) in enumerate(start_points)
+        # Background thread: run all refinements, collect results
+        Threads.@spawn begin
             try
-                result = refine_fn(pt)
-                cp_color, cp_marker = cp_type_appearance(result.cp_type)
+                # Each entry: (index, start_point, result_or_nothing, error_msg_or_nothing)
+                outcomes = Vector{NamedTuple{(:idx, :pt, :result, :error_msg), Tuple{Int, Vector{Float64}, Any, Union{String,Nothing}}}}()
 
-                # Mark starting point (small gray dot showing where Newton began)
-                sp = scatter!(ax, [pt[1]], [pt[2]];
-                              marker=:circle, markersize=6, color=(:gray60, 0.7),
-                              strokecolor=:gray40, strokewidth=0.5)
-                sp.inspectable[] = false
-                push!(added_plots, sp)
-
-                # Draw Newton trace colored by resulting CP type
-                if !isempty(result.trace) && length(result.trace) >= 2
-                    trace_color = (cp_color, 0.6)
-                    traj = lines!(ax, [p[1] for p in result.trace],
-                                      [p[2] for p in result.trace];
-                                  color=trace_color, linewidth=2, linestyle=:dash)
-                    traj.inspectable[] = false
-                    push!(added_plots, traj)
-
-                    # Directional arrowhead at end of trace
-                    p_prev = result.trace[end-1]
-                    p_end  = result.trace[end]
-                    dx, dy = p_end[1] - p_prev[1], p_end[2] - p_prev[2]
-                    if dx^2 + dy^2 > 0
-                        angle = atan(dy, dx) - π/2
-                        arr = scatter!(ax, [p_end[1]], [p_end[2]];
-                                       marker=:utriangle, markersize=10,
-                                       color=cp_color, rotation=angle)
-                        arr.inspectable[] = false
-                        push!(added_plots, arr)
+                for (i, pt) in enumerate(start_points)
+                    try
+                        result = refine_fn(pt)
+                        push!(outcomes, (idx=i, pt=pt, result=result, error_msg=nothing))
+                    catch e
+                        if e isa InterruptException
+                            rethrow(e)
+                        end
+                        msg = sprint(showerror, e)
+                        push!(outcomes, (idx=i, pt=pt, result=nothing, error_msg=msg))
+                        @warn "Refinement failed for point $i" exception=(e, catch_backtrace())
                     end
                 end
 
-                # Refined CP marker — larger for minima, with hover tooltip
-                is_min = result.cp_type in (:min, :degenerate_min)
-                msize = is_min ? 16 : 12
-                stroke_clr = result.converged ? :black : :red
-                stroke_w   = result.converged ? 1.5 : 2.5
+                # Main thread: create all Makie plot objects and update observables
+                @async begin
+                    try
+                        n_ok = 0
+                        for o in outcomes
+                            if o.result === nothing
+                                _log!(log_lines, "  #$(o.idx) -- FAILED: $(o.error_msg)")
+                                println("    #$(o.idx) -- FAILED: $(o.error_msg)")
+                                continue
+                            end
 
-                # Build tooltip string for DataInspector
-                tooltip_parts = [
-                    "Type: $(result.cp_type)",
-                    @sprintf("f = %.6e", result.objective_value),
-                    @sprintf("||∇f|| = %.2e", result.gradient_norm),
-                    @sprintf("p = [%.5f, %.5f]", result.point[1], result.point[2]),
-                    "iters = $(result.iterations)",
-                    result.converged ? "converged" : "NOT converged",
-                ]
-                if hasproperty(result, :eigenvalues) && !isempty(result.eigenvalues)
-                    push!(tooltip_parts, "eigs = [$(join([@sprintf("%+.2e", e) for e in result.eigenvalues], ", "))]")
-                end
-                if hasproperty(result, :condition_number) && isfinite(result.condition_number)
-                    push!(tooltip_parts, @sprintf("cond = %.2e", result.condition_number))
-                end
-                if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
-                    push!(tooltip_parts, @sprintf("λ_min = %+.2e", result.min_eigenvalue))
-                end
-                tooltip = join(tooltip_parts, "\n")
+                            result = o.result
+                            pt = o.pt
+                            i = o.idx
+                            cp_color, cp_marker = cp_type_appearance(result.cp_type)
 
-                rs = scatter!(ax, [result.point[1]], [result.point[2]];
-                              marker=cp_marker, markersize=msize, color=cp_color,
-                              strokecolor=stroke_clr, strokewidth=stroke_w,
-                              inspector_label = (self, idx, pos) -> tooltip)
-                push!(added_plots, rs)
-                n_ok += 1
+                            # Mark starting point (small gray dot)
+                            sp = scatter!(ax, [pt[1]], [pt[2]];
+                                          marker=:circle, markersize=6, color=(:gray60, 0.7),
+                                          strokecolor=:gray40, strokewidth=0.5)
+                            sp.inspectable[] = false
+                            push!(added_plots, sp)
 
-                # Rich log line with eigenvalues + condition number
-                eig_str = hasproperty(result, :eigenvalues) ? _format_eigenvalues(result.eigenvalues) : ""
-                cond_str = ""
-                if hasproperty(result, :condition_number) && isfinite(result.condition_number)
-                    cond_str = @sprintf("  cond=%.1e", result.condition_number)
+                            # Draw Newton trace colored by resulting CP type
+                            if !isempty(result.trace) && length(result.trace) >= 2
+                                trace_color = (cp_color, 0.6)
+                                traj = lines!(ax, [p[1] for p in result.trace],
+                                                  [p[2] for p in result.trace];
+                                              color=trace_color, linewidth=2, linestyle=:dash)
+                                traj.inspectable[] = false
+                                push!(added_plots, traj)
+
+                                # Directional arrowhead at end of trace
+                                p_prev = result.trace[end-1]
+                                p_end  = result.trace[end]
+                                dx, dy = p_end[1] - p_prev[1], p_end[2] - p_prev[2]
+                                if dx^2 + dy^2 > 0
+                                    angle = atan(dy, dx) - π/2
+                                    arr = scatter!(ax, [p_end[1]], [p_end[2]];
+                                                   marker=:utriangle, markersize=10,
+                                                   color=cp_color, rotation=angle)
+                                    arr.inspectable[] = false
+                                    push!(added_plots, arr)
+                                end
+                            end
+
+                            # Refined CP marker — larger for minima, with hover tooltip
+                            is_min = result.cp_type in (:min, :degenerate_min)
+                            msize = is_min ? 16 : 12
+                            stroke_clr = result.converged ? :black : :red
+                            stroke_w   = result.converged ? 1.5 : 2.5
+
+                            # Build tooltip string for DataInspector
+                            tooltip_parts = [
+                                "Type: $(result.cp_type)",
+                                @sprintf("f = %.6e", result.objective_value),
+                                @sprintf("||∇f|| = %.2e", result.gradient_norm),
+                                @sprintf("p = [%.5f, %.5f]", result.point[1], result.point[2]),
+                                "iters = $(result.iterations)",
+                                result.converged ? "converged" : "NOT converged",
+                            ]
+                            if hasproperty(result, :eigenvalues) && !isempty(result.eigenvalues)
+                                push!(tooltip_parts, "eigs = [$(join([@sprintf("%+.2e", e) for e in result.eigenvalues], ", "))]")
+                            end
+                            if hasproperty(result, :condition_number) && isfinite(result.condition_number)
+                                push!(tooltip_parts, @sprintf("cond = %.2e", result.condition_number))
+                            end
+                            if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
+                                push!(tooltip_parts, @sprintf("λ_min = %+.2e", result.min_eigenvalue))
+                            end
+                            tooltip = join(tooltip_parts, "\n")
+
+                            rs = scatter!(ax, [result.point[1]], [result.point[2]];
+                                          marker=cp_marker, markersize=msize, color=cp_color,
+                                          strokecolor=stroke_clr, strokewidth=stroke_w,
+                                          inspector_label = (self, idx, pos) -> tooltip)
+                            push!(added_plots, rs)
+                            n_ok += 1
+
+                            # Rich log line with eigenvalues + condition number
+                            eig_str = hasproperty(result, :eigenvalues) ? _format_eigenvalues(result.eigenvalues) : ""
+                            cond_str = ""
+                            if hasproperty(result, :condition_number) && isfinite(result.condition_number)
+                                cond_str = @sprintf("  cond=%.1e", result.condition_number)
+                            end
+                            if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
+                                cond_str *= @sprintf("  λ_min=%+.1e", result.min_eigenvalue)
+                            end
+                            log_msg = @sprintf("  #%d -> %s  f=%.3e  ||grad||=%.1e  iters=%d  p=[%.5f, %.5f]%s%s",
+                                i, result.cp_type, result.objective_value, result.gradient_norm,
+                                result.iterations, result.point[1], result.point[2], eig_str, cond_str)
+                            _log!(log_lines, log_msg)
+                            conv_str = result.converged ? "" : "  [NOT CONVERGED]"
+                            println("    ", log_msg, conv_str)
+                        end
+
+                        summary_msg = "$action $n_ok/$(length(start_points)) CPs [$mode_str]"
+                        info_obs[] = summary_msg
+                        _log!(log_lines, summary_msg)
+                        println("  ", summary_msg)
+
+                        # Clear selection and user-placed points after refining (not on re-refine)
+                        if !isempty(new_points)
+                            selected_indices[] = Set{Int}()
+                            user_placed_pts[] = Point2f[]
+                        end
+                    finally
+                        _refining[] = false
+                    end
                 end
-                if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
-                    cond_str *= @sprintf("  λ_min=%+.1e", result.min_eigenvalue)
-                end
-                log_msg = @sprintf("  #%d -> %s  f=%.3e  ||grad||=%.1e  iters=%d  p=[%.5f, %.5f]%s%s",
-                    i, result.cp_type, result.objective_value, result.gradient_norm,
-                    result.iterations, result.point[1], result.point[2], eig_str, cond_str)
-                _log!(log_lines, log_msg)
-                conv_str = result.converged ? "" : "  [NOT CONVERGED]"
-                println("    ", log_msg, conv_str)
+
             catch e
-                @warn "Refinement failed for point $i" exception=(e, catch_backtrace())
-                _log!(log_lines, "  #$i -- FAILED: $(sprint(showerror, e))")
-                println("    #$i -- FAILED: $(sprint(showerror, e))")
+                if !(e isa InterruptException)
+                    @warn "Refinement background task failed" exception=(e, catch_backtrace())
+                end
+                @async begin
+                    info_obs[] = "Refinement failed: $(sprint(showerror, e))"
+                    _log!(log_lines, "Refinement FAILED: $(sprint(showerror, e))")
+                    _refining[] = false
+                end
             end
-        end
-
-        summary_msg = "$action $n_ok/$(length(start_points)) CPs [$mode_str]"
-        info_obs[] = summary_msg
-        _log!(log_lines, summary_msg)
-        println("  ", summary_msg)
-        # Clear selection and user-placed points after refining (not on re-refine)
-        if !isempty(new_points)
-            selected_indices[] = Set{Int}()
-            user_placed_pts[] = Point2f[]
         end
     end
 
