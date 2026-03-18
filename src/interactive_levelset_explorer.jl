@@ -45,6 +45,34 @@ function _make_linear_slider!(layout, row::Int, label_text::String,
     return sl.value
 end
 
+"""
+    _make_info_button!(layout, row, col, tooltip, log_lines)
+
+Create a small "?" button that logs `tooltip` to the log panel when clicked.
+"""
+"""
+    _make_float_slider!(layout, row, label_text, range, default_val, fmt)
+
+Create a labeled slider with floating-point display format in `layout[row, :]`.
+Returns the Observable holding the slider value.
+"""
+function _make_float_slider!(layout, row::Int, label_text::String,
+                              range::AbstractRange, default_val::Number;
+                              digits::Int=2)
+    Label(layout[row, 1], label_text; fontsize=10, halign=:right)
+    sl = Slider(layout[row, 2]; range=range, startvalue=default_val)
+    Label(layout[row, 3], @lift(string(round($(sl.value); digits=$digits))); fontsize=10, halign=:left)
+    return sl.value
+end
+
+function _make_info_button!(layout, row::Int, col::Int, tooltip::String, log_lines::Observable)
+    btn = Button(layout[row, col]; label="?", fontsize=9, width=20, height=20)
+    on(btn.clicks) do _
+        _log!(log_lines, tooltip)
+    end
+    return btn
+end
+
 function _log!(log_lines::Observable, msg::String)
     lines = copy(log_lines[])
     push!(lines, msg)
@@ -473,10 +501,36 @@ function interactive_levelset_explorer(
         newton_panel = controls[3, 1:4] = GridLayout()
         Label(newton_panel[1, 1:3], "── Refinement Parameters ──"; fontsize=10, halign=:left, color=:gray50)
         newton_tol_obs        = _make_log_slider!(newton_panel, 2, "tol", -12.0:0.5:-2.0, -8.0)
+        _make_info_button!(newton_panel, 2, 4, "tol: Gradient norm convergence threshold ‖∇f‖ < tol", log_lines)
         newton_accept_tol_obs = _make_log_slider!(newton_panel, 3, "accept_tol", -6.0:0.5:0.0, -2.0)
+        _make_info_button!(newton_panel, 3, 4, "accept_tol: Relaxed acceptance — classify if ‖∇f‖ < accept_tol", log_lines)
         newton_maxiter_obs    = _make_linear_slider!(newton_panel, 4, "max_iter", 10:10:1000, 200)
+        _make_info_button!(newton_panel, 4, 4, "max_iter: Maximum Newton iterations", log_lines)
         hessian_tol_obs       = _make_log_slider!(newton_panel, 5, "hessian_tol", -10.0:0.5:-2.0, -6.0)
+        _make_info_button!(newton_panel, 5, 4, "hessian_tol: Absolute eigenvalue threshold for min/max/saddle classification", log_lines)
         newton_step_obs       = _make_log_slider!(newton_panel, 6, "step size", -2.0:0.25:0.0, -1.0)
+        _make_info_button!(newton_panel, 6, 4, "step size: Initial trust region as fraction of domain diameter", log_lines)
+
+        # New parameters: patience, min_improvement_ratio, hessian_relative_tol, f_accept_tol, mode
+        patience_obs          = _make_linear_slider!(newton_panel, 7, "patience", 1:1:50, 10)
+        _make_info_button!(newton_panel, 7, 4, "patience: Iterations without improvement before early exit", log_lines)
+        min_improve_obs       = _make_float_slider!(newton_panel, 8, "min_improve", 0.80:0.01:1.00, 0.99; digits=2)
+        _make_info_button!(newton_panel, 8, 4, "min_improvement_ratio: Bail if best grad norm hasn't improved by this ratio", log_lines)
+        hessian_rel_tol_obs   = _make_float_slider!(newton_panel, 9, "hess_rel_tol", 0.0:0.005:0.1, 0.0; digits=3)
+        _make_info_button!(newton_panel, 9, 4, "hessian_relative_tol: Relative eigenvalue threshold for CP classification", log_lines)
+
+        # f_accept_tol: log slider with "off" sentinel at left edge
+        # Slider range starts at -7 (sentinel = off), actual range -6 to 0
+        f_accept_sl_obs = _make_log_slider!(newton_panel, 10, "f_accept", -7.0:0.5:0.0, -7.0)
+        f_accept_val_obs = @lift($(f_accept_sl_obs) < 1.5e-7 ? nothing : $(f_accept_sl_obs))
+        _make_info_button!(newton_panel, 10, 4, "f_accept_tol: Accept if f(x) < threshold (leftmost = off)", log_lines)
+
+        # Mode toggle: critical_point vs minimize
+        Label(newton_panel[11, 1], "mode"; fontsize=10, halign=:right)
+        mode_toggle = Toggle(newton_panel[11, 2]; active=true)  # true = CP, false = minimize
+        mode_label_obs = @lift($(mode_toggle.active) ? "CP" : "minimize")
+        Label(newton_panel[11, 3], mode_label_obs; fontsize=10, halign=:left)
+        _make_info_button!(newton_panel, 11, 4, "mode: CP finds any critical point (∇f=0). Minimize uses descent only", log_lines)
 
         # Dummy Observables for unused Optim sliders (not shown)
         optim_f_abstol_obs = Observable(1e-6)
@@ -568,10 +622,33 @@ function interactive_levelset_explorer(
         newton_panel = controls[4, 1:4] = GridLayout()
         Label(newton_panel[1, 1:3], "── Newton Parameters ──"; fontsize=10, halign=:left, color=:gray50)
         newton_tol_obs        = _make_log_slider!(newton_panel, 2, "tol", -12.0:0.5:-2.0, -8.0)
+        _make_info_button!(newton_panel, 2, 4, "tol: Gradient norm convergence threshold ‖∇f‖ < tol", log_lines)
         newton_accept_tol_obs = _make_log_slider!(newton_panel, 3, "accept_tol", -6.0:0.5:0.0, -2.0)
+        _make_info_button!(newton_panel, 3, 4, "accept_tol: Relaxed acceptance — classify if ‖∇f‖ < accept_tol", log_lines)
         newton_maxiter_obs    = _make_linear_slider!(newton_panel, 4, "max_iter", 10:10:1000, 200)
+        _make_info_button!(newton_panel, 4, 4, "max_iter: Maximum Newton iterations", log_lines)
         hessian_tol_obs       = _make_log_slider!(newton_panel, 5, "hessian_tol", -10.0:0.5:-2.0, -6.0)
+        _make_info_button!(newton_panel, 5, 4, "hessian_tol: Absolute eigenvalue threshold for min/max/saddle classification", log_lines)
         newton_step_obs       = _make_log_slider!(newton_panel, 6, "step size", -2.0:0.25:0.0, -1.0)
+        _make_info_button!(newton_panel, 6, 4, "step size: Initial trust region as fraction of domain diameter", log_lines)
+
+        # New Newton parameters
+        patience_obs          = _make_linear_slider!(newton_panel, 7, "patience", 1:1:50, 10)
+        _make_info_button!(newton_panel, 7, 4, "patience: Iterations without improvement before early exit", log_lines)
+        min_improve_obs       = _make_float_slider!(newton_panel, 8, "min_improve", 0.80:0.01:1.00, 0.99; digits=2)
+        _make_info_button!(newton_panel, 8, 4, "min_improvement_ratio: Bail if best grad norm hasn't improved by this ratio", log_lines)
+        hessian_rel_tol_obs   = _make_float_slider!(newton_panel, 9, "hess_rel_tol", 0.0:0.005:0.1, 0.0; digits=3)
+        _make_info_button!(newton_panel, 9, 4, "hessian_relative_tol: Relative eigenvalue threshold for CP classification", log_lines)
+
+        f_accept_sl_obs = _make_log_slider!(newton_panel, 10, "f_accept", -7.0:0.5:0.0, -7.0)
+        f_accept_val_obs = @lift($(f_accept_sl_obs) < 1.5e-7 ? nothing : $(f_accept_sl_obs))
+        _make_info_button!(newton_panel, 10, 4, "f_accept_tol: Accept if f(x) < threshold (leftmost = off)", log_lines)
+
+        Label(newton_panel[11, 1], "mode"; fontsize=10, halign=:right)
+        mode_toggle = Toggle(newton_panel[11, 2]; active=true)
+        mode_label_obs = @lift($(mode_toggle.active) ? "CP" : "minimize")
+        Label(newton_panel[11, 3], mode_label_obs; fontsize=10, halign=:left)
+        _make_info_button!(newton_panel, 11, 4, "mode: CP finds any critical point (∇f=0). Minimize uses descent only", log_lines)
 
         # ── Optim parameter sliders ──────────────────────────────────────────
         optim_panel = controls[5, 1:4] = GridLayout()
@@ -761,15 +838,23 @@ function interactive_levelset_explorer(
         snap_maxiter       = round(Int, newton_maxiter_obs[])
         snap_hessian_tol   = hessian_tol_obs[]
         snap_step_fraction = newton_step_obs[]
+        snap_patience      = round(Int, patience_obs[])
+        snap_min_improve   = Float64(min_improve_obs[])
+        snap_hessian_rel   = Float64(hessian_rel_tol_obs[])
+        snap_f_accept      = f_accept_val_obs[]
+        snap_mode          = mode_toggle.active[] ? :critical_point : :minimize
 
         # Build the refine function based on mode (captured snapshot values)
         if has_single
-            mode_str = "Newton"
+            mode_str = snap_mode == :critical_point ? "Newton CP" : "Newton minimize"
             refine_fn = pt -> refine(pt;
                 tol=snap_newton_tol, accept_tol=snap_accept_tol,
                 max_iterations=snap_maxiter,
                 hessian_tol=snap_hessian_tol,
-                trust_radius_fraction=snap_step_fraction)
+                trust_radius_fraction=snap_step_fraction,
+                patience=snap_patience, min_improvement_ratio=snap_min_improve,
+                hessian_relative_tol=snap_hessian_rel, f_accept_tol=snap_f_accept,
+                mode=snap_mode)
         else
             mode = mode_obs[]
             mode_str = mode == :newton ? "Newton" : mode == :lbfgs ? "LBFGS" : "NelderMead"
@@ -782,7 +867,10 @@ function interactive_levelset_explorer(
                     tol=snap_newton_tol, accept_tol=snap_accept_tol,
                     max_iterations=snap_maxiter,
                     hessian_tol=snap_hessian_tol,
-                    trust_radius_fraction=snap_step_fraction)
+                    trust_radius_fraction=snap_step_fraction,
+                    patience=snap_patience, min_improvement_ratio=snap_min_improve,
+                    hessian_relative_tol=snap_hessian_rel, f_accept_tol=snap_f_accept,
+                    mode=snap_mode)
             elseif mode == :lbfgs
                 pt -> refine_optim(pt;
                     f_abstol=snap_f_abstol, x_abstol=snap_x_abstol,
