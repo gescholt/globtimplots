@@ -46,11 +46,6 @@ function _make_linear_slider!(layout, row::Int, label_text::String,
 end
 
 """
-    _make_info_button!(layout, row, col, tooltip, log_lines)
-
-Create a small "?" button that logs `tooltip` to the log panel when clicked.
-"""
-"""
     _make_float_slider!(layout, row, label_text, range, default_val, fmt)
 
 Create a labeled slider with floating-point display format in `layout[row, :]`.
@@ -65,6 +60,11 @@ function _make_float_slider!(layout, row::Int, label_text::String,
     return sl.value
 end
 
+"""
+    _make_info_button!(layout, row, col, tooltip, log_lines)
+
+Create a small "?" button that logs `tooltip` to the log panel when clicked.
+"""
 function _make_info_button!(layout, row::Int, col::Int, tooltip::String, log_lines::Observable)
     btn = Button(layout[row, col]; label="?", fontsize=9, width=20, height=20)
     on(btn.clicks) do _
