@@ -789,10 +789,14 @@ function interactive_levelset_explorer(
         Makie.is_mouseinside(ax.scene) || return Consume(false)
         raw_scatter === nothing && return Consume(false)
 
-        # Pick the plot object under cursor (radius=10 for trackpad tolerance)
+        # pick_sorted returns all (plot, index) pairs within radius, sorted by
+        # distance.  We search for raw_scatter because pick() only returns the
+        # topmost plot (often the contourf background).
         mp = events(ax.scene).mouseposition[]
-        picked_plot, picked_idx = pick(ax.scene, mp, 10)
-        picked_plot === raw_scatter || return Consume(false)
+        picks = Makie.pick_sorted(ax.scene, mp, 10)
+        hit = findfirst(p -> p[1] === raw_scatter, picks)
+        hit === nothing && return Consume(false)
+        picked_idx = picks[hit][2]
         (picked_idx < 1 || picked_idx > length(filtered_raw_cps)) && return Consume(false)
 
         # Toggle selection
