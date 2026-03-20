@@ -14,6 +14,21 @@ const _LOG_PANEL_MAX_LINES = 15
 const _EXPLORER_LOG_PANEL_WIDTH = 280
 const _EXPLORER_CONTROLS_HEIGHT = 70
 
+# ── Main-thread marshalling channel for Observable updates from @spawn ────────
+# GLMakie requires all Observable mutations to happen on the main thread.
+# Background tasks (Threads.@spawn) queue closures here; a Timer drains them.
+const _ui_channel = Channel{Function}(64)
+const _ui_timer = Timer(0.05; interval = 0.05) do _
+    while isready(_ui_channel)
+        fn = take!(_ui_channel)
+        try
+            Base.invokelatest(fn)
+        catch e
+            @warn "UI update error" exception=(e, catch_backtrace())
+        end
+    end
+end
+
 # ── Slider builder helpers ──────────────────────────────────────────────────
 
 """
@@ -559,27 +574,31 @@ function interactive_levelset_explorer(
                 Threads.@spawn begin
                     try
                         cps, rel_l2, solve_time = find_cps(deg)
-                        # Push results back to main thread via @async
-                        @async begin
-                            found_cps_data[] = cps
-                            found_cps_pts[] = [Point2f(cp[1], cp[2]) for cp in cps]
-                            l2_pct = @sprintf("%.2f%%", 100 * rel_l2)
-                            msg = "Deg $deg: $(length(cps)) CPs, L2=$l2_pct ($(round(solve_time, digits=1))s)"
-                            find_info[] = msg
-                            _log!(log_lines, msg)
-                            println("  ", msg)
-                            for (ci, cp) in enumerate(cps)
-                                @printf("    CP %d: [%.5f, %.5f]\n", ci, cp[1], cp[2])
-                            end
-                            find_btn_label[] = "Find CPs"
-                            info_obs[] = "$(length(cps)) CPs found — Cmd+click to select for refinement"
+                        # Marshal Observable updates to main thread via _ui_channel
+                        let cps=cps, rel_l2=rel_l2, solve_time=solve_time
+                            put!(_ui_channel, () -> begin
+                                found_cps_data[] = cps
+                                found_cps_pts[] = [Point2f(cp[1], cp[2]) for cp in cps]
+                                l2_pct = @sprintf("%.2f%%", 100 * rel_l2)
+                                msg = "Deg $deg: $(length(cps)) CPs, L2=$l2_pct ($(round(solve_time, digits=1))s)"
+                                find_info[] = msg
+                                _log!(log_lines, msg)
+                                println("  ", msg)
+                                for (ci, cp) in enumerate(cps)
+                                    @printf("    CP %d: [%.5f, %.5f]\n", ci, cp[1], cp[2])
+                                end
+                                find_btn_label[] = "Find CPs"
+                                info_obs[] = "$(length(cps)) CPs found — Cmd+click to select for refinement"
+                            end)
                         end
                     catch e
-                        @async begin
-                            _log!(log_lines, "Find CPs FAILED: $(sprint(showerror, e))")
-                            println("  Find CPs FAILED: $(sprint(showerror, e))")
-                            find_btn_label[] = "Find CPs"
-                            find_info[] = "FAILED"
+                        let emsg = sprint(showerror, e)
+                            put!(_ui_channel, () -> begin
+                                _log!(log_lines, "Find CPs FAILED: $emsg")
+                                println("  Find CPs FAILED: $emsg")
+                                find_btn_label[] = "Find CPs"
+                                find_info[] = "FAILED"
+                            end)
                         end
                         @warn "Find CPs failed" exception=(e, catch_backtrace())
                     end
@@ -912,146 +931,151 @@ function interactive_levelset_explorer(
                     end
                 end
 
-                # Main thread: create all Makie plot objects and update observables
-                @async begin
-                    try
-                        n_ok = 0
-                        for o in outcomes
-                            if o.result === nothing
-                                _log!(log_lines, "  #$(o.idx) -- FAILED: $(o.error_msg)")
-                                println("    #$(o.idx) -- FAILED: $(o.error_msg)")
-                                continue
+                # Marshal all Makie plot object creation and Observable updates to main thread
+                let outcomes=outcomes, action=action, start_points=start_points,
+                    mode_str=mode_str, new_points=new_points
+                    put!(_ui_channel, () -> begin
+                        try
+                            n_ok = 0
+                            for o in outcomes
+                                if o.result === nothing
+                                    _log!(log_lines, "  #$(o.idx) -- FAILED: $(o.error_msg)")
+                                    println("    #$(o.idx) -- FAILED: $(o.error_msg)")
+                                    continue
+                                end
+
+                                result = o.result
+                                pt = o.pt
+                                i = o.idx
+                                cp_color, cp_marker = cp_type_appearance(result.cp_type)
+
+                                # Mark starting point (small gray dot)
+                                sp = scatter!(ax, [pt[1]], [pt[2]];
+                                              marker=:circle, markersize=6, color=(:gray60, 0.7),
+                                              strokecolor=:gray40, strokewidth=0.5)
+                                sp.inspectable[] = false
+                                push!(added_plots, sp)
+
+                                # Draw Newton trace colored by resulting CP type
+                                if !isempty(result.trace) && length(result.trace) >= 2
+                                    trace_color = (cp_color, 0.6)
+                                    traj = lines!(ax, [p[1] for p in result.trace],
+                                                      [p[2] for p in result.trace];
+                                                  color=trace_color, linewidth=2, linestyle=:dash)
+                                    traj.inspectable[] = false
+                                    push!(added_plots, traj)
+
+                                    # Directional arrowhead at end of trace
+                                    p_prev = result.trace[end-1]
+                                    p_end  = result.trace[end]
+                                    dx, dy = p_end[1] - p_prev[1], p_end[2] - p_prev[2]
+                                    if dx^2 + dy^2 > 0
+                                        angle = atan(dy, dx) - π/2
+                                        arr = scatter!(ax, [p_end[1]], [p_end[2]];
+                                                       marker=:utriangle, markersize=10,
+                                                       color=cp_color, rotation=angle)
+                                        arr.inspectable[] = false
+                                        push!(added_plots, arr)
+                                    end
+                                end
+
+                                # Refined CP marker — larger for minima, with hover tooltip
+                                is_min = result.cp_type in (:min, :degenerate_min)
+                                msize = is_min ? 16 : 12
+                                stroke_clr = result.converged ? :black : :red
+                                stroke_w   = result.converged ? 1.5 : 2.5
+
+                                # Build tooltip string for DataInspector
+                                grad_method_label = if hasproperty(result, :gradient_method) && result.gradient_method != :unknown
+                                    _gradient_method_label(result.gradient_method)
+                                else
+                                    ""
+                                end
+                                tooltip_parts = [
+                                    "Type: $(result.cp_type)",
+                                    @sprintf("f = %.6e", result.objective_value),
+                                    @sprintf("||∇f|| = %.2e", result.gradient_norm),
+                                    @sprintf("p = [%.5f, %.5f]", result.point[1], result.point[2]),
+                                    "iters = $(result.iterations)",
+                                    result.converged ? "converged" : "NOT converged",
+                                ]
+                                if !isempty(grad_method_label)
+                                    push!(tooltip_parts, "Gradient: $grad_method_label")
+                                end
+                                if hasproperty(result, :eigenvalues) && !isempty(result.eigenvalues)
+                                    push!(tooltip_parts, "eigs = [$(join([@sprintf("%+.2e", e) for e in result.eigenvalues], ", "))]")
+                                end
+                                if hasproperty(result, :condition_number) && isfinite(result.condition_number)
+                                    push!(tooltip_parts, @sprintf("cond = %.2e", result.condition_number))
+                                end
+                                if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
+                                    push!(tooltip_parts, @sprintf("λ_min = %+.2e", result.min_eigenvalue))
+                                end
+                                tooltip = join(tooltip_parts, "\n")
+
+                                rs = scatter!(ax, [result.point[1]], [result.point[2]];
+                                              marker=cp_marker, markersize=msize, color=cp_color,
+                                              strokecolor=stroke_clr, strokewidth=stroke_w,
+                                              inspector_label = (self, idx, pos) -> tooltip)
+                                push!(added_plots, rs)
+                                n_ok += 1
+
+                                # Rich log line with eigenvalues + condition number
+                                eig_str = hasproperty(result, :eigenvalues) ? _format_eigenvalues(result.eigenvalues) : ""
+                                cond_str = ""
+                                if hasproperty(result, :condition_number) && isfinite(result.condition_number)
+                                    cond_str = @sprintf("  cond=%.1e", result.condition_number)
+                                end
+                                if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
+                                    cond_str *= @sprintf("  λ_min=%+.1e", result.min_eigenvalue)
+                                end
+                                grad_tag = if hasproperty(result, :gradient_method)
+                                    _gradient_method_short(result.gradient_method)
+                                else
+                                    ""
+                                end
+                                log_msg = @sprintf("  #%d %s-> %s  f=%.3e  ||grad||=%.1e  iters=%d  p=[%.5f, %.5f]%s%s",
+                                    i, grad_tag, result.cp_type, result.objective_value, result.gradient_norm,
+                                    result.iterations, result.point[1], result.point[2], eig_str, cond_str)
+                                _log!(log_lines, log_msg)
+                                conv_str = result.converged ? "" : "  [NOT CONVERGED]"
+                                println("    ", log_msg, conv_str)
                             end
 
-                            result = o.result
-                            pt = o.pt
-                            i = o.idx
-                            cp_color, cp_marker = cp_type_appearance(result.cp_type)
-
-                            # Mark starting point (small gray dot)
-                            sp = scatter!(ax, [pt[1]], [pt[2]];
-                                          marker=:circle, markersize=6, color=(:gray60, 0.7),
-                                          strokecolor=:gray40, strokewidth=0.5)
-                            sp.inspectable[] = false
-                            push!(added_plots, sp)
-
-                            # Draw Newton trace colored by resulting CP type
-                            if !isempty(result.trace) && length(result.trace) >= 2
-                                trace_color = (cp_color, 0.6)
-                                traj = lines!(ax, [p[1] for p in result.trace],
-                                                  [p[2] for p in result.trace];
-                                              color=trace_color, linewidth=2, linestyle=:dash)
-                                traj.inspectable[] = false
-                                push!(added_plots, traj)
-
-                                # Directional arrowhead at end of trace
-                                p_prev = result.trace[end-1]
-                                p_end  = result.trace[end]
-                                dx, dy = p_end[1] - p_prev[1], p_end[2] - p_prev[2]
-                                if dx^2 + dy^2 > 0
-                                    angle = atan(dy, dx) - π/2
-                                    arr = scatter!(ax, [p_end[1]], [p_end[2]];
-                                                   marker=:utriangle, markersize=10,
-                                                   color=cp_color, rotation=angle)
-                                    arr.inspectable[] = false
-                                    push!(added_plots, arr)
+                            # Determine gradient method label for summary (from first successful result)
+                            grad_summary = ""
+                            for o in outcomes
+                                if o.result !== nothing && hasproperty(o.result, :gradient_method) && o.result.gradient_method != :unknown
+                                    grad_summary = "/" * _gradient_method_label(o.result.gradient_method)
+                                    break
                                 end
                             end
+                            summary_msg = "$action $n_ok/$(length(start_points)) CPs [$mode_str$grad_summary]"
+                            info_obs[] = summary_msg
+                            _log!(log_lines, summary_msg)
+                            println("  ", summary_msg)
 
-                            # Refined CP marker — larger for minima, with hover tooltip
-                            is_min = result.cp_type in (:min, :degenerate_min)
-                            msize = is_min ? 16 : 12
-                            stroke_clr = result.converged ? :black : :red
-                            stroke_w   = result.converged ? 1.5 : 2.5
-
-                            # Build tooltip string for DataInspector
-                            grad_method_label = if hasproperty(result, :gradient_method) && result.gradient_method != :unknown
-                                _gradient_method_label(result.gradient_method)
-                            else
-                                ""
+                            # Clear selection and user-placed points after refining (not on re-refine)
+                            if !isempty(new_points)
+                                selected_indices[] = Set{Int}()
+                                user_placed_pts[] = Point2f[]
                             end
-                            tooltip_parts = [
-                                "Type: $(result.cp_type)",
-                                @sprintf("f = %.6e", result.objective_value),
-                                @sprintf("||∇f|| = %.2e", result.gradient_norm),
-                                @sprintf("p = [%.5f, %.5f]", result.point[1], result.point[2]),
-                                "iters = $(result.iterations)",
-                                result.converged ? "converged" : "NOT converged",
-                            ]
-                            if !isempty(grad_method_label)
-                                push!(tooltip_parts, "Gradient: $grad_method_label")
-                            end
-                            if hasproperty(result, :eigenvalues) && !isempty(result.eigenvalues)
-                                push!(tooltip_parts, "eigs = [$(join([@sprintf("%+.2e", e) for e in result.eigenvalues], ", "))]")
-                            end
-                            if hasproperty(result, :condition_number) && isfinite(result.condition_number)
-                                push!(tooltip_parts, @sprintf("cond = %.2e", result.condition_number))
-                            end
-                            if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
-                                push!(tooltip_parts, @sprintf("λ_min = %+.2e", result.min_eigenvalue))
-                            end
-                            tooltip = join(tooltip_parts, "\n")
-
-                            rs = scatter!(ax, [result.point[1]], [result.point[2]];
-                                          marker=cp_marker, markersize=msize, color=cp_color,
-                                          strokecolor=stroke_clr, strokewidth=stroke_w,
-                                          inspector_label = (self, idx, pos) -> tooltip)
-                            push!(added_plots, rs)
-                            n_ok += 1
-
-                            # Rich log line with eigenvalues + condition number
-                            eig_str = hasproperty(result, :eigenvalues) ? _format_eigenvalues(result.eigenvalues) : ""
-                            cond_str = ""
-                            if hasproperty(result, :condition_number) && isfinite(result.condition_number)
-                                cond_str = @sprintf("  cond=%.1e", result.condition_number)
-                            end
-                            if hasproperty(result, :min_eigenvalue) && isfinite(result.min_eigenvalue)
-                                cond_str *= @sprintf("  λ_min=%+.1e", result.min_eigenvalue)
-                            end
-                            grad_tag = if hasproperty(result, :gradient_method)
-                                _gradient_method_short(result.gradient_method)
-                            else
-                                ""
-                            end
-                            log_msg = @sprintf("  #%d %s-> %s  f=%.3e  ||grad||=%.1e  iters=%d  p=[%.5f, %.5f]%s%s",
-                                i, grad_tag, result.cp_type, result.objective_value, result.gradient_norm,
-                                result.iterations, result.point[1], result.point[2], eig_str, cond_str)
-                            _log!(log_lines, log_msg)
-                            conv_str = result.converged ? "" : "  [NOT CONVERGED]"
-                            println("    ", log_msg, conv_str)
+                        finally
+                            _refining[] = false
                         end
-
-                        # Determine gradient method label for summary (from first successful result)
-                        grad_summary = ""
-                        for o in outcomes
-                            if o.result !== nothing && hasproperty(o.result, :gradient_method) && o.result.gradient_method != :unknown
-                                grad_summary = "/" * _gradient_method_label(o.result.gradient_method)
-                                break
-                            end
-                        end
-                        summary_msg = "$action $n_ok/$(length(start_points)) CPs [$mode_str$grad_summary]"
-                        info_obs[] = summary_msg
-                        _log!(log_lines, summary_msg)
-                        println("  ", summary_msg)
-
-                        # Clear selection and user-placed points after refining (not on re-refine)
-                        if !isempty(new_points)
-                            selected_indices[] = Set{Int}()
-                            user_placed_pts[] = Point2f[]
-                        end
-                    finally
-                        _refining[] = false
-                    end
+                    end)
                 end
 
             catch e
                 if !(e isa InterruptException)
                     @warn "Refinement background task failed" exception=(e, catch_backtrace())
                 end
-                @async begin
-                    info_obs[] = "Refinement failed: $(sprint(showerror, e))"
-                    _log!(log_lines, "Refinement FAILED: $(sprint(showerror, e))")
-                    _refining[] = false
+                let emsg = sprint(showerror, e)
+                    put!(_ui_channel, () -> begin
+                        info_obs[] = "Refinement failed: $emsg"
+                        _log!(log_lines, "Refinement FAILED: $emsg")
+                        _refining[] = false
+                    end)
                 end
             end
         end
