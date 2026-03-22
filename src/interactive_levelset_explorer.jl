@@ -18,15 +18,22 @@ const _EXPLORER_CONTROLS_HEIGHT = 70
 # GLMakie requires all Observable mutations to happen on the main thread.
 # Background tasks (Threads.@spawn) queue closures here; a Timer drains them.
 const _ui_channel = Channel{Function}(64)
-const _ui_timer = Timer(0.05; interval = 0.05) do _
-    while isready(_ui_channel)
-        fn = take!(_ui_channel)
-        try
-            Base.invokelatest(fn)
-        catch e
-            @warn "UI update error" exception=(e, catch_backtrace())
+const _ui_timer_ref = Ref{Union{Timer, Nothing}}(nothing)
+
+function _ensure_ui_timer()
+    if _ui_timer_ref[] === nothing
+        _ui_timer_ref[] = Timer(0.05; interval = 0.05) do _
+            while isready(_ui_channel)
+                fn = take!(_ui_channel)
+                try
+                    Base.invokelatest(fn)
+                catch e
+                    @warn "UI update error" exception=(e, catch_backtrace())
+                end
+            end
         end
     end
+    return _ui_timer_ref[]
 end
 
 # ── Slider builder helpers ──────────────────────────────────────────────────
@@ -237,6 +244,7 @@ function interactive_levelset_explorer(
     fig_size::Tuple{Int, Int} = (1400, 750),
     controls_size::Tuple{Int, Int} = (560, 600),
 )
+    _ensure_ui_timer()
     root_bounds = get_bounds(tree.subdomains[tree.root_id])
     length(root_bounds) == 2 || error("interactive_levelset_explorer requires a 2D subdivision tree")
 
@@ -358,6 +366,7 @@ function interactive_levelset_explorer(
     enable_click_placement::Bool = false,
     find_cps::Union{Nothing, Function} = nothing,
 )
+    _ensure_ui_timer()
     # Verify 2D
     length(bounds) == 2 || error("interactive_levelset_explorer requires 2D bounds")
     # Must have either `refine` (single callback) or both `refine_newton` + `refine_optim`
