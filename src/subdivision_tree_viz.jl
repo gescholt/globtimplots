@@ -536,7 +536,7 @@ Create publication-quality visualization of a subdivision tree.
 ```julia
 using Globtim, GlobtimPlots
 
-tree = adaptive_refine(f, bounds, 4, l2_tolerance=1e-3)
+tree = adaptive_refine(f, bounds, 4)  # uses default relative L2 tolerance of 0.03
 fig = plot_subdivision_tree(tree)
 save("tree.pdf", fig)
 ```
