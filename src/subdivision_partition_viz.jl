@@ -18,7 +18,7 @@ Base.@kwdef struct SubdivisionPartitionStyle
     colormap::Symbol = :viridis
 
     # Figure
-    fig_size::Tuple{Int, Int} = (700, 560)
+    fig_size::Tuple{Int,Int} = (700, 560)
     fontsize::Int = 13
 
     # Degree labels
@@ -59,7 +59,7 @@ Base.@kwdef struct SubdivisionPartitionStyle
     # Legend
     show_legend::Bool = true
     legend_labelsize::Int = 10
-    legend_patchsize::Tuple{Int, Int} = (14, 14)
+    legend_patchsize::Tuple{Int,Int} = (14, 14)
 end
 
 # ── Contour level preparation ────────────────────────────────────────────────
@@ -71,10 +71,9 @@ Apply optional log₁₀ transform and/or quantile-based level breaks to a raw
 objective grid `Z`.  Returns `(Z_display, levels_kw)` where `levels_kw` is
 either `n_levels` (Int) or a `Vector{Float64}` of explicit breakpoints.
 """
-function _prepare_contourf_args(Z::Matrix, n_levels::Int,
-                                 style::SubdivisionPartitionStyle)
+function _prepare_contourf_args(Z::Matrix, n_levels::Int, style::SubdivisionPartitionStyle)
     if style.log_scale
-        min_pos = minimum(z for z in Z if isfinite(z) && z > 0; init=NaN)
+        min_pos = minimum(z for z in Z if isfinite(z) && z > 0; init = NaN)
         if isnan(min_pos)
             @warn "_prepare_contourf_args: no positive finite values in Z — skipping log transform"
             Z_display = Z
@@ -87,8 +86,9 @@ function _prepare_contourf_args(Z::Matrix, n_levels::Int,
 
     if style.quantile_levels
         vals = filter(isfinite, vec(Z_display))
-        isempty(vals) && error("_prepare_contourf_args: no finite values for quantile levels")
-        qs = range(0, 1; length=n_levels + 1)
+        isempty(vals) &&
+            error("_prepare_contourf_args: no finite values for quantile levels")
+        qs = range(0, 1; length = n_levels + 1)
         levels_kw = unique(quantile(vals, qs))
         # Need at least 2 levels for contourf
         if length(levels_kw) < 2
@@ -187,9 +187,15 @@ end
 
 Draw colored rectangles for leaf subdomains, colored by `log₁₀(L2 error)`.
 """
-function _draw_partition_rects!(ax, leaf_bounds, l2_errors, cmin, cmax;
-                                 style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
-                                 l2_tolerance::Union{Nothing, Float64} = nothing)
+function _draw_partition_rects!(
+    ax,
+    leaf_bounds,
+    l2_errors,
+    cmin,
+    cmax;
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+    l2_tolerance::Union{Nothing,Float64} = nothing,
+)
     cmap = Makie.resample_cmap(style.colormap, 256)
     for (lb, err) in zip(leaf_bounds, l2_errors)
         x_lo, x_hi = lb[1]
@@ -199,7 +205,7 @@ function _draw_partition_rects!(ax, leaf_bounds, l2_errors, cmin, cmax;
 
         l2v = (err == Inf || isnan(err)) ? NaN : log10(max(err, 1e-20))
         t = isnan(l2v) ? 1.0 : clamp((l2v - cmin) / (cmax - cmin), 0, 1)
-        c = cmap[round(Int, t * 255) + 1]
+        c = cmap[round(Int, t * 255)+1]
 
         if style.show_convergence_borders && l2_tolerance !== nothing
             converged = !isnan(err) && err != Inf && err <= l2_tolerance
@@ -210,8 +216,7 @@ function _draw_partition_rects!(ax, leaf_bounds, l2_errors, cmin, cmax;
             sw = style.unconverged_strokewidth
         end
 
-        poly!(ax, Rect(x_lo, y_lo, w, h);
-              color=c, strokecolor=sc, strokewidth=sw)
+        poly!(ax, Rect(x_lo, y_lo, w, h); color = c, strokecolor = sc, strokewidth = sw)
     end
 end
 
@@ -220,8 +225,15 @@ end
 
 Annotate degree inside each box with luminance-aware text color.
 """
-function _draw_degree_labels!(ax, leaf_bounds, leaf_degrees, l2_errors, cmin, cmax;
-                               style::SubdivisionPartitionStyle = SubdivisionPartitionStyle())
+function _draw_degree_labels!(
+    ax,
+    leaf_bounds,
+    leaf_degrees,
+    l2_errors,
+    cmin,
+    cmax;
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+)
     d_lo, d_hi = _domain_bbox(leaf_bounds)
     x_extent = d_hi[1] - d_lo[1]
     y_extent = d_hi[2] - d_lo[2]
@@ -234,18 +246,25 @@ function _draw_degree_labels!(ax, leaf_bounds, leaf_degrees, l2_errors, cmin, cm
         h = y_hi - y_lo
 
         # Skip labels on tiny boxes
-        w > style.min_box_fraction * x_extent && h > style.min_box_fraction * y_extent || continue
+        w > style.min_box_fraction * x_extent && h > style.min_box_fraction * y_extent ||
+            continue
 
         lbl = format_degree_label(deg)
         l2v = (err == Inf || isnan(err)) ? NaN : log10(max(err, 1e-20))
         t = isnan(l2v) ? 1.0 : clamp((l2v - cmin) / (cmax - cmin), 0, 1)
-        bg = cmap_arr[round(Int, t * 255) + 1]
+        bg = cmap_arr[round(Int, t * 255)+1]
         lum = 0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b
         tc = lum > 0.5 ? :black : :white
 
-        text!(ax, x_lo + w / 2, y_lo + h / 2;
-              text=lbl, fontsize=style.degree_fontsize, color=tc,
-              align=(:center, :center))
+        text!(
+            ax,
+            x_lo + w / 2,
+            y_lo + h / 2;
+            text = lbl,
+            fontsize = style.degree_fontsize,
+            color = tc,
+            align = (:center, :center),
+        )
     end
 end
 
@@ -255,10 +274,14 @@ end
 Overlay verified critical points colored by type (min/saddle/max).
 Points outside the domain are excluded when `domain_lo` and `domain_hi` are provided.
 """
-function _scatter_cps_by_type!(ax, cp_points::Vector, cp_types::Vector;
-                                domain_lo::Union{Nothing, Vector{Float64}} = nothing,
-                                domain_hi::Union{Nothing, Vector{Float64}} = nothing,
-                                style::SubdivisionPartitionStyle = SubdivisionPartitionStyle())
+function _scatter_cps_by_type!(
+    ax,
+    cp_points::Vector,
+    cp_types::Vector;
+    domain_lo::Union{Nothing,Vector{Float64}} = nothing,
+    domain_hi::Union{Nothing,Vector{Float64}} = nothing,
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+)
     isempty(cp_points) && return
 
     # Filter to points inside domain if bounds provided
@@ -271,13 +294,21 @@ function _scatter_cps_by_type!(ax, cp_points::Vector, cp_types::Vector;
     for key in keys(CP_TYPE_TABLE)
         entry = CP_TYPE_TABLE[key]
         type_str = string(key)
-        idxs = findall(i -> mask[i] && string(cp_types[i]) == type_str, eachindex(cp_points))
+        idxs =
+            findall(i -> mask[i] && string(cp_types[i]) == type_str, eachindex(cp_points))
         isempty(idxs) && continue
         xs = [cp_points[i][1] for i in idxs]
         ys = [cp_points[i][2] for i in idxs]
-        scatter!(ax, xs, ys;
-                 marker=entry.marker, markersize=style.cp_markersize, color=entry.color,
-                 strokecolor=:white, strokewidth=1.5)
+        scatter!(
+            ax,
+            xs,
+            ys;
+            marker = entry.marker,
+            markersize = style.cp_markersize,
+            color = entry.color,
+            strokecolor = :white,
+            strokewidth = 1.5,
+        )
     end
 end
 
@@ -287,10 +318,13 @@ end
 Overlay raw (pre-refinement) critical points as thin white crosses.
 Drawn before refined CPs so refined markers render on top.
 """
-function _scatter_raw_cps!(ax, raw_cp_points::Vector;
-                           domain_lo::Union{Nothing, Vector{Float64}} = nothing,
-                           domain_hi::Union{Nothing, Vector{Float64}} = nothing,
-                           style::SubdivisionPartitionStyle = SubdivisionPartitionStyle())
+function _scatter_raw_cps!(
+    ax,
+    raw_cp_points::Vector;
+    domain_lo::Union{Nothing,Vector{Float64}} = nothing,
+    domain_hi::Union{Nothing,Vector{Float64}} = nothing,
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+)
     isempty(raw_cp_points) && return
 
     # Filter to points inside domain if bounds provided
@@ -305,11 +339,16 @@ function _scatter_raw_cps!(ax, raw_cp_points::Vector;
 
     xs = [raw_cp_points[i][1] for i in idxs]
     ys = [raw_cp_points[i][2] for i in idxs]
-    scatter!(ax, xs, ys;
-             marker=:cross, markersize=style.raw_cp_markersize,
-             color=style.raw_cp_color,
-             strokecolor=style.raw_cp_color,
-             strokewidth=style.raw_cp_strokewidth)
+    scatter!(
+        ax,
+        xs,
+        ys;
+        marker = :cross,
+        markersize = style.raw_cp_markersize,
+        color = style.raw_cp_color,
+        strokecolor = style.raw_cp_color,
+        strokewidth = style.raw_cp_strokewidth,
+    )
 end
 
 """
@@ -317,13 +356,24 @@ end
 
 Plot the true parameter as a gold star.
 """
-function _scatter_p_true!(ax, p_true; style::SubdivisionPartitionStyle = SubdivisionPartitionStyle())
+function _scatter_p_true!(
+    ax,
+    p_true;
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+)
     if !isempty(p_true)
-        scatter!(ax, [p_true[1]], [p_true[2]];
-                 marker=:star5, markersize=style.p_true_markersize, color=:gold,
-                 strokecolor=:black, strokewidth=1.5)
-        vlines!(ax, [p_true[1]]; color=(:gold, 0.3), linewidth=1, linestyle=:dash)
-        hlines!(ax, [p_true[2]]; color=(:gold, 0.3), linewidth=1, linestyle=:dash)
+        scatter!(
+            ax,
+            [p_true[1]],
+            [p_true[2]];
+            marker = :star5,
+            markersize = style.p_true_markersize,
+            color = :gold,
+            strokecolor = :black,
+            strokewidth = 1.5,
+        )
+        vlines!(ax, [p_true[1]]; color = (:gold, 0.3), linewidth = 1, linestyle = :dash)
+        hlines!(ax, [p_true[2]]; color = (:gold, 0.3), linewidth = 1, linestyle = :dash)
     end
 end
 
@@ -339,25 +389,59 @@ function _build_legend_entries(style::SubdivisionPartitionStyle; show_raw_cps::B
     # CP type entries from canonical table
     for key in keys(CP_TYPE_TABLE)
         entry = CP_TYPE_TABLE[key]
-        push!(entries, MarkerElement(marker=entry.marker, color=entry.color,
-                                      strokecolor=:white, strokewidth=1.5,
-                                      markersize=style.cp_markersize))
+        push!(
+            entries,
+            MarkerElement(
+                marker = entry.marker,
+                color = entry.color,
+                strokecolor = :white,
+                strokewidth = 1.5,
+                markersize = style.cp_markersize,
+            ),
+        )
         push!(labels, entry.label)
     end
 
     # Fixed entries: p_true, convergence borders
-    push!(entries, MarkerElement(marker=:star5, color=:gold, strokecolor=:black, strokewidth=1.5, markersize=12))
+    push!(
+        entries,
+        MarkerElement(
+            marker = :star5,
+            color = :gold,
+            strokecolor = :black,
+            strokewidth = 1.5,
+            markersize = 12,
+        ),
+    )
     push!(labels, "p* (true)")
-    push!(entries, LineElement(color=(style.converged_strokecolor, style.convergence_border_alpha), linewidth=style.converged_strokewidth))
+    push!(
+        entries,
+        LineElement(
+            color = (style.converged_strokecolor, style.convergence_border_alpha),
+            linewidth = style.converged_strokewidth,
+        ),
+    )
     push!(labels, "Converged")
-    push!(entries, LineElement(color=(style.unconverged_strokecolor, style.convergence_border_alpha), linewidth=style.unconverged_strokewidth))
+    push!(
+        entries,
+        LineElement(
+            color = (style.unconverged_strokecolor, style.convergence_border_alpha),
+            linewidth = style.unconverged_strokewidth,
+        ),
+    )
     push!(labels, "Unconverged")
 
     if show_raw_cps
-        push!(entries, MarkerElement(marker=:cross, color=style.raw_cp_color,
-                                     strokecolor=style.raw_cp_color,
-                                     strokewidth=style.raw_cp_strokewidth,
-                                     markersize=style.raw_cp_markersize))
+        push!(
+            entries,
+            MarkerElement(
+                marker = :cross,
+                color = style.raw_cp_color,
+                strokecolor = style.raw_cp_color,
+                strokewidth = style.raw_cp_strokewidth,
+                markersize = style.raw_cp_markersize,
+            ),
+        )
         push!(labels, "Raw CP")
     end
 
@@ -411,8 +495,8 @@ function plot_subdivision_partition(
     cp_types::Vector = String[],
     raw_cp_points::Vector = Vector{Float64}[],
     p_true = nothing,
-    l2_tolerance::Union{Nothing, Float64} = nothing,
-    colorrange::Union{Nothing, Tuple{Float64, Float64}} = nothing,
+    l2_tolerance::Union{Nothing,Float64} = nothing,
+    colorrange::Union{Nothing,Tuple{Float64,Float64}} = nothing,
     title::String = "Domain Partition",
     subtitle::String = "",
     style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
@@ -431,62 +515,102 @@ function plot_subdivision_partition(
     # Create figure if not provided
     own_fig = isnothing(fig)
     if own_fig
-        fig = Figure(size=style.fig_size, fontsize=style.fontsize)
+        fig = Figure(size = style.fig_size, fontsize = style.fontsize)
     end
 
     # Create axis if not provided
     if isnothing(ax)
-        ax = Axis(fig[1, 1];
-            xlabel="p₁", ylabel="p₂",
-            title=title,
-            subtitle=subtitle,
-            aspect=DataAspect(),
+        ax = Axis(
+            fig[1, 1];
+            xlabel = "p₁",
+            ylabel = "p₂",
+            title = title,
+            subtitle = subtitle,
+            aspect = DataAspect(),
         )
     end
 
     # Draw colored partition rectangles
-    _draw_partition_rects!(ax, leaf_bounds, leaf_l2_errors, cmin, cmax;
-                            style=style, l2_tolerance=l2_tolerance)
+    _draw_partition_rects!(
+        ax,
+        leaf_bounds,
+        leaf_l2_errors,
+        cmin,
+        cmax;
+        style = style,
+        l2_tolerance = l2_tolerance,
+    )
 
     # Degree labels
     if style.show_degree_labels && !isempty(leaf_degrees)
-        _draw_degree_labels!(ax, leaf_bounds, leaf_degrees, leaf_l2_errors, cmin, cmax;
-                              style=style)
+        _draw_degree_labels!(
+            ax,
+            leaf_bounds,
+            leaf_degrees,
+            leaf_l2_errors,
+            cmin,
+            cmax;
+            style = style,
+        )
     end
 
     # Raw (pre-refinement) critical points — drawn first so refined CPs render on top
     d_lo, d_hi = _domain_bbox(leaf_bounds)
     if style.show_raw_cps && !isempty(raw_cp_points)
-        _scatter_raw_cps!(ax, raw_cp_points;
-                          domain_lo=d_lo, domain_hi=d_hi, style=style)
+        _scatter_raw_cps!(
+            ax,
+            raw_cp_points;
+            domain_lo = d_lo,
+            domain_hi = d_hi,
+            style = style,
+        )
     end
 
     # Refined critical points
     if style.show_critical_points && !isempty(cp_points)
-        _scatter_cps_by_type!(ax, cp_points, cp_types;
-                               domain_lo=d_lo, domain_hi=d_hi, style=style)
+        _scatter_cps_by_type!(
+            ax,
+            cp_points,
+            cp_types;
+            domain_lo = d_lo,
+            domain_hi = d_hi,
+            style = style,
+        )
     end
 
     # True parameter
     if style.show_p_true && p_true !== nothing
-        _scatter_p_true!(ax, p_true; style=style)
+        _scatter_p_true!(ax, p_true; style = style)
     end
 
     # Colorbar (only add if we own the figure layout)
     if style.show_colorbar && own_fig
-        Colorbar(fig[1, 2]; colorrange=(cmin, cmax), colormap=style.colormap,
-                 label=style.colorbar_label, width=style.colorbar_width,
-                 ticklabelsize=style.colorbar_ticklabelsize)
+        Colorbar(
+            fig[1, 2];
+            colorrange = (cmin, cmax),
+            colormap = style.colormap,
+            label = style.colorbar_label,
+            width = style.colorbar_width,
+            ticklabelsize = style.colorbar_ticklabelsize,
+        )
     end
 
     # Legend (only add if we own the figure layout)
     if style.show_legend && own_fig
-        entries, labels = _build_legend_entries(style;
-            show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points))
-        Legend(fig[2, 1:2], entries, labels;
-               orientation=:horizontal, framevisible=false,
-               labelsize=style.legend_labelsize, patchsize=style.legend_patchsize,
-               colgap=12)
+        entries, labels = _build_legend_entries(
+            style;
+            show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points),
+        )
+        Legend(
+            fig[2, 1:2],
+            entries,
+            labels;
+            orientation = :horizontal,
+            framevisible = false,
+            labelsize = style.legend_labelsize,
+            patchsize = style.legend_patchsize,
+            colgap = 12,
+        )
     end
 
     return fig
@@ -502,9 +626,13 @@ Green for converged leaves (`l2_error ≤ l2_tolerance`), gray for unconverged.
 
 Uses two batched `linesegments!` calls (one per status) for efficiency.
 """
-function _draw_convergence_boundaries!(ax, leaf_bounds, leaf_l2_errors;
-                                        l2_tolerance::Union{Nothing, Float64} = nothing,
-                                        style::SubdivisionPartitionStyle = SubdivisionPartitionStyle())
+function _draw_convergence_boundaries!(
+    ax,
+    leaf_bounds,
+    leaf_l2_errors;
+    l2_tolerance::Union{Nothing,Float64} = nothing,
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+)
     conv_xs = Float64[]
     conv_ys = Float64[]
     unconv_xs = Float64[]
@@ -514,29 +642,42 @@ function _draw_convergence_boundaries!(ax, leaf_bounds, leaf_l2_errors;
         x_lo, x_hi = lb[1]
         y_lo, y_hi = lb[2]
 
-        converged = l2_tolerance !== nothing && !isnan(err) && err != Inf && err <= l2_tolerance
+        converged =
+            l2_tolerance !== nothing && !isnan(err) && err != Inf && err <= l2_tolerance
         xs = converged ? conv_xs : unconv_xs
         ys = converged ? conv_ys : unconv_ys
 
         # Bottom
-        push!(xs, x_lo, x_hi); push!(ys, y_lo, y_lo)
+        push!(xs, x_lo, x_hi)
+        push!(ys, y_lo, y_lo)
         # Right
-        push!(xs, x_hi, x_hi); push!(ys, y_lo, y_hi)
+        push!(xs, x_hi, x_hi)
+        push!(ys, y_lo, y_hi)
         # Top
-        push!(xs, x_hi, x_lo); push!(ys, y_hi, y_hi)
+        push!(xs, x_hi, x_lo)
+        push!(ys, y_hi, y_hi)
         # Left
-        push!(xs, x_lo, x_lo); push!(ys, y_hi, y_lo)
+        push!(xs, x_lo, x_lo)
+        push!(ys, y_hi, y_lo)
     end
 
     if !isempty(conv_xs)
-        linesegments!(ax, conv_xs, conv_ys;
-                      color=(style.converged_strokecolor, style.convergence_border_alpha),
-                      linewidth=style.converged_strokewidth)
+        linesegments!(
+            ax,
+            conv_xs,
+            conv_ys;
+            color = (style.converged_strokecolor, style.convergence_border_alpha),
+            linewidth = style.converged_strokewidth,
+        )
     end
     if !isempty(unconv_xs)
-        linesegments!(ax, unconv_xs, unconv_ys;
-                      color=(style.unconverged_strokecolor, style.convergence_border_alpha),
-                      linewidth=style.unconverged_strokewidth)
+        linesegments!(
+            ax,
+            unconv_xs,
+            unconv_ys;
+            color = (style.unconverged_strokecolor, style.convergence_border_alpha),
+            linewidth = style.unconverged_strokewidth,
+        )
     end
 end
 
@@ -546,14 +687,22 @@ end
 Tree-based dispatch: extracts leaf bounds and L2 errors from the tree, then
 delegates to the data-based method.
 """
-function _draw_convergence_boundaries!(ax, tree::SubdivisionTree;
-                                        l2_tolerance::Union{Nothing, Float64} = nothing,
-                                        style::SubdivisionPartitionStyle = SubdivisionPartitionStyle())
+function _draw_convergence_boundaries!(
+    ax,
+    tree::SubdivisionTree;
+    l2_tolerance::Union{Nothing,Float64} = nothing,
+    style::SubdivisionPartitionStyle = SubdivisionPartitionStyle(),
+)
     all_leaf_ids = vcat(tree.active_leaves, tree.converged_leaves)
     leaf_bounds = [get_bounds(tree.subdomains[id]) for id in all_leaf_ids]
     leaf_l2_errors = [tree.subdomains[id].l2_error for id in all_leaf_ids]
-    _draw_convergence_boundaries!(ax, leaf_bounds, leaf_l2_errors;
-                                   l2_tolerance=l2_tolerance, style=style)
+    _draw_convergence_boundaries!(
+        ax,
+        leaf_bounds,
+        leaf_l2_errors;
+        l2_tolerance = l2_tolerance,
+        style = style,
+    )
 end
 
 # ── Level set base rendering (shared by static and interactive) ───────────────
@@ -569,11 +718,14 @@ object for colorbar binding.
 Does NOT draw raw CPs — callers handle raw CPs differently (static: `_scatter_raw_cps!`;
 interactive: named scatter for `pick()`).
 """
-function _build_levelset_base!(ax, tree::SubdivisionTree, f;
+function _build_levelset_base!(
+    ax,
+    tree::SubdivisionTree,
+    f;
     resolution::Int = 200,
     n_levels::Int = 30,
     colormap::Symbol = :viridis,
-    l2_tolerance::Union{Nothing, Float64} = nothing,
+    l2_tolerance::Union{Nothing,Float64} = nothing,
     cp_points::Vector = Vector{Float64}[],
     cp_types::Vector = String[],
     p_true = nothing,
@@ -583,8 +735,8 @@ function _build_levelset_base!(ax, tree::SubdivisionTree, f;
     x_lo, x_hi = root_bounds[1]
     y_lo, y_hi = root_bounds[2]
 
-    xs = range(x_lo, x_hi; length=resolution)
-    ys = range(y_lo, y_hi; length=resolution)
+    xs = range(x_lo, x_hi; length = resolution)
+    ys = range(y_lo, y_hi; length = resolution)
     f_values = [f([x, y]) for x in xs, y in ys]
 
     # Apply optional log/quantile transform
@@ -592,12 +744,17 @@ function _build_levelset_base!(ax, tree::SubdivisionTree, f;
     cb_label = style.log_scale ? "log₁₀ f(p)" : "f(p)"
 
     # Level-set contour fill
-    cf = contourf!(ax, collect(xs), collect(ys), Z_display;
-                   levels=levels_kw, colormap=colormap)
+    cf = contourf!(
+        ax,
+        collect(xs),
+        collect(ys),
+        Z_display;
+        levels = levels_kw,
+        colormap = colormap,
+    )
 
     # Subdivision boundaries with convergence coloring
-    _draw_convergence_boundaries!(ax, tree;
-                                   l2_tolerance=l2_tolerance, style=style)
+    _draw_convergence_boundaries!(ax, tree; l2_tolerance = l2_tolerance, style = style)
 
     # Domain bounds for CP filtering
     d_lo = Float64[x_lo, y_lo]
@@ -605,13 +762,19 @@ function _build_levelset_base!(ax, tree::SubdivisionTree, f;
 
     # Refined CPs
     if style.show_critical_points && !isempty(cp_points)
-        _scatter_cps_by_type!(ax, cp_points, cp_types;
-                               domain_lo=d_lo, domain_hi=d_hi, style=style)
+        _scatter_cps_by_type!(
+            ax,
+            cp_points,
+            cp_types;
+            domain_lo = d_lo,
+            domain_hi = d_hi,
+            style = style,
+        )
     end
 
     # True parameter
     if style.show_p_true && p_true !== nothing
-        _scatter_p_true!(ax, p_true; style=style)
+        _scatter_p_true!(ax, p_true; style = style)
     end
 
     return cf, cb_label
@@ -645,11 +808,12 @@ Requires the `SubdivisionTree` and objective function to be in memory (runtime o
 - `fig, ax`: Plot into existing Figure/Axis
 """
 function plot_subdivision_on_levelset(
-    tree::SubdivisionTree, f;
+    tree::SubdivisionTree,
+    f;
     resolution::Int = 200,
     n_levels::Int = 30,
     colormap::Symbol = :viridis,
-    l2_tolerance::Union{Nothing, Float64} = nothing,
+    l2_tolerance::Union{Nothing,Float64} = nothing,
     cp_points::Vector = Vector{Float64}[],
     cp_types::Vector = String[],
     raw_cp_points::Vector = Vector{Float64}[],
@@ -662,47 +826,75 @@ function plot_subdivision_on_levelset(
     # Create figure if not provided
     own_fig = isnothing(fig)
     if own_fig
-        fig = Figure(size=style.fig_size, fontsize=style.fontsize)
+        fig = Figure(size = style.fig_size, fontsize = style.fontsize)
     end
 
     if isnothing(ax)
-        ax = Axis(fig[1, 1];
-            xlabel="p₁", ylabel="p₂",
-            title=title,
-            aspect=DataAspect(),
+        ax = Axis(
+            fig[1, 1];
+            xlabel = "p₁",
+            ylabel = "p₂",
+            title = title,
+            aspect = DataAspect(),
         )
     end
 
     # Draw shared levelset base (contour, boundaries, refined CPs, p_true)
-    cf, cb_label = _build_levelset_base!(ax, tree, f;
-        resolution=resolution, n_levels=n_levels, colormap=colormap,
-        l2_tolerance=l2_tolerance, cp_points=cp_points, cp_types=cp_types,
-        p_true=p_true, style=style)
+    cf, cb_label = _build_levelset_base!(
+        ax,
+        tree,
+        f;
+        resolution = resolution,
+        n_levels = n_levels,
+        colormap = colormap,
+        l2_tolerance = l2_tolerance,
+        cp_points = cp_points,
+        cp_types = cp_types,
+        p_true = p_true,
+        style = style,
+    )
 
     # Raw CPs (drawn on top of base, before legend/colorbar)
     root_bounds = get_bounds(tree.subdomains[tree.root_id])
     d_lo = Float64[root_bounds[1][1], root_bounds[2][1]]
     d_hi = Float64[root_bounds[1][2], root_bounds[2][2]]
     if style.show_raw_cps && !isempty(raw_cp_points)
-        _scatter_raw_cps!(ax, raw_cp_points;
-                          domain_lo=d_lo, domain_hi=d_hi, style=style)
+        _scatter_raw_cps!(
+            ax,
+            raw_cp_points;
+            domain_lo = d_lo,
+            domain_hi = d_hi,
+            style = style,
+        )
     end
 
     # Colorbar for contour fill
     if style.show_colorbar && own_fig
-        Colorbar(fig[1, 2], cf; label=cb_label,
-                 width=style.colorbar_width,
-                 ticklabelsize=style.colorbar_ticklabelsize)
+        Colorbar(
+            fig[1, 2],
+            cf;
+            label = cb_label,
+            width = style.colorbar_width,
+            ticklabelsize = style.colorbar_ticklabelsize,
+        )
     end
 
     # Legend
     if style.show_legend && own_fig
-        entries, labels = _build_legend_entries(style;
-            show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points))
-        Legend(fig[2, 1:2], entries, labels;
-               orientation=:horizontal, framevisible=false,
-               labelsize=style.legend_labelsize, patchsize=style.legend_patchsize,
-               colgap=12)
+        entries, labels = _build_legend_entries(
+            style;
+            show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points),
+        )
+        Legend(
+            fig[2, 1:2],
+            entries,
+            labels;
+            orientation = :horizontal,
+            framevisible = false,
+            labelsize = style.legend_labelsize,
+            patchsize = style.legend_patchsize,
+            colgap = 12,
+        )
     end
 
     return fig
@@ -723,13 +915,14 @@ L2 errors have been extracted (e.g. from JSON results).
 All other keyword arguments are the same as the tree-based version.
 """
 function plot_subdivision_on_levelset(
-    f, bounds::Vector;
+    f,
+    bounds::Vector;
     leaf_bounds::Vector,
     leaf_l2_errors::Vector{Float64},
     resolution::Int = 200,
     n_levels::Int = 30,
     colormap::Symbol = :viridis,
-    l2_tolerance::Union{Nothing, Float64} = nothing,
+    l2_tolerance::Union{Nothing,Float64} = nothing,
     cp_points::Vector = Vector{Float64}[],
     cp_types::Vector = String[],
     raw_cp_points::Vector = Vector{Float64}[],
@@ -743,21 +936,23 @@ function plot_subdivision_on_levelset(
     y_lo, y_hi = bounds[2]
 
     # Evaluate f on a uniform grid
-    xs = range(x_lo, x_hi; length=resolution)
-    ys = range(y_lo, y_hi; length=resolution)
+    xs = range(x_lo, x_hi; length = resolution)
+    ys = range(y_lo, y_hi; length = resolution)
     f_values = [f([x, y]) for x in xs, y in ys]
 
     # Create figure if not provided
     own_fig = isnothing(fig)
     if own_fig
-        fig = Figure(size=style.fig_size, fontsize=style.fontsize)
+        fig = Figure(size = style.fig_size, fontsize = style.fontsize)
     end
 
     if isnothing(ax)
-        ax = Axis(fig[1, 1];
-            xlabel="p₁", ylabel="p₂",
-            title=title,
-            aspect=DataAspect(),
+        ax = Axis(
+            fig[1, 1];
+            xlabel = "p₁",
+            ylabel = "p₂",
+            title = title,
+            aspect = DataAspect(),
         )
     end
 
@@ -766,12 +961,23 @@ function plot_subdivision_on_levelset(
     cb_label = style.log_scale ? "log₁₀ f(p)" : "f(p)"
 
     # Level-set contour fill
-    cf = contourf!(ax, collect(xs), collect(ys), Z_display;
-                   levels=levels_kw, colormap=colormap)
+    cf = contourf!(
+        ax,
+        collect(xs),
+        collect(ys),
+        Z_display;
+        levels = levels_kw,
+        colormap = colormap,
+    )
 
     # Subdivision boundaries with convergence coloring
-    _draw_convergence_boundaries!(ax, leaf_bounds, leaf_l2_errors;
-                                   l2_tolerance=l2_tolerance, style=style)
+    _draw_convergence_boundaries!(
+        ax,
+        leaf_bounds,
+        leaf_l2_errors;
+        l2_tolerance = l2_tolerance,
+        style = style,
+    )
 
     # Domain bounds for CP filtering
     d_lo = Float64[x_lo, y_lo]
@@ -779,36 +985,59 @@ function plot_subdivision_on_levelset(
 
     # Raw CPs (drawn first so refined CPs render on top)
     if style.show_raw_cps && !isempty(raw_cp_points)
-        _scatter_raw_cps!(ax, raw_cp_points;
-                          domain_lo=d_lo, domain_hi=d_hi, style=style)
+        _scatter_raw_cps!(
+            ax,
+            raw_cp_points;
+            domain_lo = d_lo,
+            domain_hi = d_hi,
+            style = style,
+        )
     end
 
     # Refined CPs
     if style.show_critical_points && !isempty(cp_points)
-        _scatter_cps_by_type!(ax, cp_points, cp_types;
-                               domain_lo=d_lo, domain_hi=d_hi, style=style)
+        _scatter_cps_by_type!(
+            ax,
+            cp_points,
+            cp_types;
+            domain_lo = d_lo,
+            domain_hi = d_hi,
+            style = style,
+        )
     end
 
     # True parameter
     if style.show_p_true && p_true !== nothing
-        _scatter_p_true!(ax, p_true; style=style)
+        _scatter_p_true!(ax, p_true; style = style)
     end
 
     # Colorbar for contour fill
     if style.show_colorbar && own_fig
-        Colorbar(fig[1, 2], cf; label=cb_label,
-                 width=style.colorbar_width,
-                 ticklabelsize=style.colorbar_ticklabelsize)
+        Colorbar(
+            fig[1, 2],
+            cf;
+            label = cb_label,
+            width = style.colorbar_width,
+            ticklabelsize = style.colorbar_ticklabelsize,
+        )
     end
 
     # Legend
     if style.show_legend && own_fig
-        entries, labels = _build_legend_entries(style;
-            show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points))
-        Legend(fig[2, 1:2], entries, labels;
-               orientation=:horizontal, framevisible=false,
-               labelsize=style.legend_labelsize, patchsize=style.legend_patchsize,
-               colgap=12)
+        entries, labels = _build_legend_entries(
+            style;
+            show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points),
+        )
+        Legend(
+            fig[2, 1:2],
+            entries,
+            labels;
+            orientation = :horizontal,
+            framevisible = false,
+            labelsize = style.legend_labelsize,
+            patchsize = style.legend_patchsize,
+            colgap = 12,
+        )
     end
 
     return fig

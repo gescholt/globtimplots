@@ -62,18 +62,20 @@ function plot_1d_polynomial_approximation(
     f::Function,
     poly,
     critical_points::DataFrame;
-    poly_eval::Union{Function, Nothing} = nothing,
+    poly_eval::Union{Function,Nothing} = nothing,
     n_plot_points::Int = 500,
     title::String = "1D Polynomial Approximation",
     show_l2_error::Bool = true,
-    func_latex::Union{LaTeXString, Nothing} = nothing,
-    n_samples::Union{Int, Nothing} = nothing,
-    save_path::Union{String, Nothing} = nothing,
-    figsize::Tuple{Int, Int} = (800, 600)
+    func_latex::Union{LaTeXString,Nothing} = nothing,
+    n_samples::Union{Int,Nothing} = nothing,
+    save_path::Union{String,Nothing} = nothing,
+    figsize::Tuple{Int,Int} = (800, 600),
 )
     # Validate poly_eval is provided
     if isnothing(poly_eval)
-        error("poly_eval function is required. Pass: poly_eval = xi -> evaluate(poly, [xi])")
+        error(
+            "poly_eval function is required. Pass: poly_eval = xi -> evaluate(poly, [xi])",
+        )
     end
 
     # Extract domain from poly metadata
@@ -83,7 +85,7 @@ function plot_1d_polynomial_approximation(
     x_max = center + scale
 
     # Create plotting grid
-    x_plot = collect(range(x_min, x_max, length=n_plot_points))
+    x_plot = collect(range(x_min, x_max, length = n_plot_points))
 
     # Evaluate original function and polynomial
     y_original = [f(xi) for xi in x_plot]
@@ -93,7 +95,7 @@ function plot_1d_polynomial_approximation(
     degree_str = _extract_degree_string(poly)
 
     # Create figure
-    fig = Figure(size=figsize, fontsize=14)
+    fig = Figure(size = figsize, fontsize = 14)
 
     # Main plot axis
     ax = Axis(
@@ -106,53 +108,88 @@ function plot_1d_polynomial_approximation(
         xgridstyle = :dash,
         ygridstyle = :dash,
         xgridcolor = (:gray, 0.3),
-        ygridcolor = (:gray, 0.3)
+        ygridcolor = (:gray, 0.3),
     )
 
     # Plot original function
     original_label = isnothing(func_latex) ? "Original f(x)" : func_latex
-    lines!(ax, x_plot, y_original,
-        color = :blue, linewidth = 2.5, label = original_label)
+    lines!(ax, x_plot, y_original, color = :blue, linewidth = 2.5, label = original_label)
 
     # Plot polynomial approximation
-    lines!(ax, x_plot, y_poly,
-        color = :red, linewidth = 2.0, linestyle = :dash,
-        label = "Polynomial (degree $degree_str)")
+    lines!(
+        ax,
+        x_plot,
+        y_poly,
+        color = :red,
+        linewidth = 2.0,
+        linestyle = :dash,
+        label = "Polynomial (degree $degree_str)",
+    )
 
     # Plot critical points
     if nrow(critical_points) > 0
-        scatter!(ax, critical_points.x1, critical_points.z,
-            color = :green, markersize = 14, marker = :star5,
-            strokecolor = :black, strokewidth = 1.5,
-            label = "Critical Points ($(nrow(critical_points)))")
+        scatter!(
+            ax,
+            critical_points.x1,
+            critical_points.z,
+            color = :green,
+            markersize = 14,
+            marker = :star5,
+            strokecolor = :black,
+            strokewidth = 1.5,
+            label = "Critical Points ($(nrow(critical_points)))",
+        )
     end
 
     # Add legend
-    axislegend(ax, position = :rt, framevisible = true,
-        backgroundcolor = (:white, 0.9), labelsize = 16)
+    axislegend(
+        ax,
+        position = :rt,
+        framevisible = true,
+        backgroundcolor = (:white, 0.9),
+        labelsize = 16,
+    )
 
     # Add L2 error and sample count annotations
     y_range = maximum(y_original) - minimum(y_original)
-    annotation_y = minimum(y_original) + 0.08*y_range
+    annotation_y = minimum(y_original) + 0.08 * y_range
 
     if show_l2_error && hasproperty(poly, :nrm)
         l2_text = "L² error: $(round(poly.nrm, sigdigits=3))"
-        text!(ax, x_min + 0.03*(x_max-x_min), annotation_y,
-            text = l2_text, fontsize = 11, color = :gray60)
-        annotation_y -= 0.05*y_range  # Move down for next annotation
+        text!(
+            ax,
+            x_min + 0.03 * (x_max - x_min),
+            annotation_y,
+            text = l2_text,
+            fontsize = 11,
+            color = :gray60,
+        )
+        annotation_y -= 0.05 * y_range  # Move down for next annotation
     end
 
     if !isnothing(n_samples)
         samples_text = "Sample set size: $n_samples"
-        text!(ax, x_min + 0.03*(x_max-x_min), annotation_y,
-            text = samples_text, fontsize = 11, color = :gray60)
+        text!(
+            ax,
+            x_min + 0.03 * (x_max - x_min),
+            annotation_y,
+            text = samples_text,
+            fontsize = 11,
+            color = :gray60,
+        )
 
         # Show sample points as small ticks at y=0 (Chebyshev nodes)
         # Chebyshev nodes: cos((2i+1)π/(2n+2)) for i=0:n, scaled to domain
-        cheb_normalized = [cos(π * (2i + 1) / (2*n_samples + 2)) for i in 0:n_samples]
+        cheb_normalized = [cos(π * (2i + 1) / (2 * n_samples + 2)) for i in 0:n_samples]
         x_samples = center .+ scale .* cheb_normalized
-        scatter!(ax, x_samples, fill(0.0, length(x_samples)),
-            marker = :vline, markersize = 10, color = :gray50)
+        scatter!(
+            ax,
+            x_samples,
+            fill(0.0, length(x_samples)),
+            marker = :vline,
+            markersize = 10,
+            color = :gray50,
+        )
     end
 
     # Save if path provided
@@ -163,7 +200,6 @@ function plot_1d_polynomial_approximation(
 
     return fig
 end
-
 
 """
     plot_1d_comparison(
@@ -189,28 +225,30 @@ Create a multi-panel comparison figure showing polynomial approximations at diff
 """
 function plot_1d_comparison(
     f::Function,
-    results::Dict{Int, <:NamedTuple};
+    results::Dict{Int,<:NamedTuple};
     poly_eval_factory::Function,
     n_plot_points::Int = 500,
-    func_latex::Union{LaTeXString, Nothing} = nothing,
-    n_samples::Union{Int, Nothing} = nothing,
-    figsize::Tuple{Int, Int} = (1200, 400),
-    save_path::Union{String, Nothing} = nothing
+    func_latex::Union{LaTeXString,Nothing} = nothing,
+    n_samples::Union{Int,Nothing} = nothing,
+    figsize::Tuple{Int,Int} = (1200, 400),
+    save_path::Union{String,Nothing} = nothing,
 )
     degrees = sort(collect(keys(results)))
 
     # Extract domain from first result
     first_poly = results[degrees[1]].poly
     center = first_poly.center[1]
-    scale = isa(first_poly.scale_factor, Number) ? first_poly.scale_factor : first_poly.scale_factor[1]
+    scale =
+        isa(first_poly.scale_factor, Number) ? first_poly.scale_factor :
+        first_poly.scale_factor[1]
     x_min = center - scale
     x_max = center + scale
 
-    x_plot = collect(range(x_min, x_max, length=n_plot_points))
+    x_plot = collect(range(x_min, x_max, length = n_plot_points))
     y_original = [f(xi) for xi in x_plot]
 
     # Create figure
-    fig = Figure(size=figsize, fontsize=12)
+    fig = Figure(size = figsize, fontsize = 12)
 
     for (i, degree) in enumerate(degrees)
         poly = results[degree].poly
@@ -218,47 +256,70 @@ function plot_1d_comparison(
         poly_eval = poly_eval_factory(poly)
 
         y_poly = [poly_eval(xi) for xi in x_plot]
-        l2_str = round(poly.nrm, sigdigits=2)
+        l2_str = round(poly.nrm, sigdigits = 2)
 
         ax = Axis(
             fig[1, i],
             xlabel = "x",
             ylabel = i == 1 ? "f(x)" : "",
-            title = "Degree $degree (L²=$l2_str)"
+            title = "Degree $degree (L²=$l2_str)",
         )
 
         # Original function
-        lines!(ax, x_plot, y_original, color=:blue, linewidth=2)
+        lines!(ax, x_plot, y_original, color = :blue, linewidth = 2)
 
         # Polynomial approximation
-        lines!(ax, x_plot, y_poly, color=:red, linewidth=2, linestyle=:dash)
+        lines!(ax, x_plot, y_poly, color = :red, linewidth = 2, linestyle = :dash)
 
         # Critical points
         if nrow(df) > 0
-            scatter!(ax, df.x1, df.z, color=:green, markersize=10, marker=:star5,
-                strokecolor=:black, strokewidth=1)
+            scatter!(
+                ax,
+                df.x1,
+                df.z,
+                color = :green,
+                markersize = 10,
+                marker = :star5,
+                strokecolor = :black,
+                strokewidth = 1,
+            )
         end
 
         # Show sample points as small ticks at y=0 (Chebyshev nodes)
         if !isnothing(n_samples)
-            cheb_normalized = [cos(π * (2i + 1) / (2*n_samples + 2)) for i in 0:n_samples]
+            cheb_normalized = [cos(π * (2i + 1) / (2 * n_samples + 2)) for i in 0:n_samples]
             x_samples = center .+ scale .* cheb_normalized
-            scatter!(ax, x_samples, fill(0.0, length(x_samples)),
-                marker = :vline, markersize = 8, color = :gray50)
+            scatter!(
+                ax,
+                x_samples,
+                fill(0.0, length(x_samples)),
+                marker = :vline,
+                markersize = 8,
+                color = :gray50,
+            )
         end
     end
 
     # Add legend below all panels
     original_label = isnothing(func_latex) ? "Original f(x)" : func_latex
     samples_label = isnothing(n_samples) ? "" : " ($n_samples samples)"
-    Legend(fig[2, :],
-        [LineElement(color=:blue, linewidth=2),
-         LineElement(color=:red, linewidth=2, linestyle=:dash),
-         MarkerElement(color=:green, marker=:star5, markersize=12, strokecolor=:black, strokewidth=1)],
+    Legend(
+        fig[2, :],
+        [
+            LineElement(color = :blue, linewidth = 2),
+            LineElement(color = :red, linewidth = 2, linestyle = :dash),
+            MarkerElement(
+                color = :green,
+                marker = :star5,
+                markersize = 12,
+                strokecolor = :black,
+                strokewidth = 1,
+            ),
+        ],
         [original_label, "Polynomial Approx.$samples_label", "Critical Points"],
         orientation = :horizontal,
         framevisible = false,
-        labelsize = 14
+        labelsize = 14,
     )
 
     # Save if path provided
@@ -269,7 +330,6 @@ function plot_1d_comparison(
 
     return fig
 end
-
 
 # Helper function to extract degree string from poly object
 function _extract_degree_string(poly)

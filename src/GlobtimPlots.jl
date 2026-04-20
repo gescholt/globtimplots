@@ -104,7 +104,8 @@ export plot_all_eigenvalues, plot_raw_vs_refined_eigenvalues
 
 # Export campaign plotting functions from CampaignPlotting.jl (Makie-based)
 export PlotBackend, Interactive, Static
-export create_experiment_plots, create_campaign_comparison_plot, create_single_plot, save_plot
+export create_experiment_plots,
+    create_campaign_comparison_plot, create_single_plot, save_plot
 export generate_experiment_labels
 
 # Note: VegaLite and Tidier-based plotting functions are temporarily disabled
@@ -122,7 +123,6 @@ export create_level_set_visualization, create_level_set_animation
 # Export utility functions
 export transform_coordinates, points_in_hypercube
 export analyze_convergence_distances, analyze_captured_distances
-
 
 # Export RL training dashboard functions
 export plot_training_progress, plot_action_distribution, plot_l2_error_evolution

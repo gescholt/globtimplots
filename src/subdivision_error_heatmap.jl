@@ -31,15 +31,19 @@ Returns x-coordinates, y-coordinates, and the error matrix.
 
 If `log_scale`, applies `log10` to the error values (clamped to a minimum of 1e-20).
 """
-function compute_error_grid(tree::SubdivisionTree, f;
-                            resolution::Int = 200, log_scale::Bool = true)
+function compute_error_grid(
+    tree::SubdivisionTree,
+    f;
+    resolution::Int = 200,
+    log_scale::Bool = true,
+)
     # Get full domain bounds from root
     root_bounds = get_bounds(tree.subdomains[tree.root_id])
     x_lo, x_hi = root_bounds[1]
     y_lo, y_hi = root_bounds[2]
 
-    xs = range(x_lo, x_hi; length=resolution)
-    ys = range(y_lo, y_hi; length=resolution)
+    xs = range(x_lo, x_hi; length = resolution)
+    ys = range(y_lo, y_hi; length = resolution)
 
     # Pre-collect leaf info for fast lookup
     all_leaf_ids = vcat(tree.active_leaves, tree.converged_leaves)
@@ -114,7 +118,8 @@ are not serialized to JSON).
 - `fig, ax`: Plot into existing Figure/Axis
 """
 function plot_subdivision_error_heatmap(
-    tree::SubdivisionTree, f;
+    tree::SubdivisionTree,
+    f;
     resolution::Int = 200,
     log_scale::Bool = true,
     colormap::Symbol = :viridis,
@@ -136,15 +141,17 @@ function plot_subdivision_error_heatmap(
     # Create figure if not provided
     own_fig = isnothing(fig)
     if own_fig
-        fig = Figure(size=style.fig_size, fontsize=style.fontsize)
+        fig = Figure(size = style.fig_size, fontsize = style.fontsize)
     end
 
     # Create axis if not provided
     if isnothing(ax)
-        ax = Axis(fig[1, 1];
-            xlabel="p₁", ylabel="p₂",
-            title=title,
-            aspect=DataAspect(),
+        ax = Axis(
+            fig[1, 1];
+            xlabel = "p₁",
+            ylabel = "p₂",
+            title = title,
+            aspect = DataAspect(),
         )
     end
 
@@ -153,29 +160,39 @@ function plot_subdivision_error_heatmap(
 
     # Subdomain boundaries
     if show_boundaries
-        _draw_boundary_segments!(ax, tree; color=boundary_color, linewidth=boundary_width)
+        _draw_boundary_segments!(
+            ax,
+            tree;
+            color = boundary_color,
+            linewidth = boundary_width,
+        )
     end
 
     # Raw CPs (white crosses, drawn before refined)
     if style.show_raw_cps && !isempty(raw_cp_points)
-        _scatter_raw_cps!(ax, raw_cp_points; style=style)
+        _scatter_raw_cps!(ax, raw_cp_points; style = style)
     end
 
     # Refined CPs
     if style.show_critical_points && !isempty(cp_points)
-        _scatter_cps_by_type!(ax, cp_points, cp_types; style=style)
+        _scatter_cps_by_type!(ax, cp_points, cp_types; style = style)
     end
 
     # True parameter
     if style.show_p_true && p_true !== nothing
-        _scatter_p_true!(ax, p_true; style=style)
+        _scatter_p_true!(ax, p_true; style = style)
     end
 
     # Colorbar
     if style.show_colorbar && own_fig
         cb_label = log_scale ? "log₁₀(|f - poly|)" : "|f - poly|"
-        Colorbar(fig[1, 2], hm; label=cb_label,
-                 width=style.colorbar_width, ticklabelsize=style.colorbar_ticklabelsize)
+        Colorbar(
+            fig[1, 2],
+            hm;
+            label = cb_label,
+            width = style.colorbar_width,
+            ticklabelsize = style.colorbar_ticklabelsize,
+        )
     end
 
     return fig
@@ -186,8 +203,12 @@ end
 
 Draw subdomain boundary line segments for all leaves in the tree.
 """
-function _draw_boundary_segments!(ax, tree::SubdivisionTree;
-                                  color = :white, linewidth::Float64 = 1.0)
+function _draw_boundary_segments!(
+    ax,
+    tree::SubdivisionTree;
+    color = :white,
+    linewidth::Float64 = 1.0,
+)
     all_leaf_ids = vcat(tree.active_leaves, tree.converged_leaves)
     # Collect all edge segments as pairs of points for a single linesegments! call
     seg_xs = Float64[]
@@ -198,15 +219,19 @@ function _draw_boundary_segments!(ax, tree::SubdivisionTree;
         y_lo, y_hi = bounds[2]
         # 4 edges per rectangle, each as a pair of points
         # Bottom: (x_lo,y_lo)→(x_hi,y_lo)
-        push!(seg_xs, x_lo, x_hi); push!(seg_ys, y_lo, y_lo)
+        push!(seg_xs, x_lo, x_hi)
+        push!(seg_ys, y_lo, y_lo)
         # Right:  (x_hi,y_lo)→(x_hi,y_hi)
-        push!(seg_xs, x_hi, x_hi); push!(seg_ys, y_lo, y_hi)
+        push!(seg_xs, x_hi, x_hi)
+        push!(seg_ys, y_lo, y_hi)
         # Top:    (x_hi,y_hi)→(x_lo,y_hi)
-        push!(seg_xs, x_hi, x_lo); push!(seg_ys, y_hi, y_hi)
+        push!(seg_xs, x_hi, x_lo)
+        push!(seg_ys, y_hi, y_hi)
         # Left:   (x_lo,y_hi)→(x_lo,y_lo)
-        push!(seg_xs, x_lo, x_lo); push!(seg_ys, y_hi, y_lo)
+        push!(seg_xs, x_lo, x_lo)
+        push!(seg_ys, y_hi, y_lo)
     end
     if !isempty(seg_xs)
-        linesegments!(ax, seg_xs, seg_ys; color=color, linewidth=linewidth)
+        linesegments!(ax, seg_xs, seg_ys; color = color, linewidth = linewidth)
     end
 end

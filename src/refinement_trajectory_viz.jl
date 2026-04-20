@@ -43,8 +43,16 @@ Base.@kwdef struct RefinementTrajectoryStyle
     stroke_width::Float64 = 0.5
     line_alpha::Float64 = 0.8
     colors::Vector{Symbol} = [
-        :orangered, :darkorange, :gold, :yellowgreen, :cyan,
-        :deepskyblue, :dodgerblue, :mediumpurple, :orchid, :hotpink,
+        :orangered,
+        :darkorange,
+        :gold,
+        :yellowgreen,
+        :cyan,
+        :deepskyblue,
+        :dodgerblue,
+        :mediumpurple,
+        :orchid,
+        :hotpink,
     ]
 end
 
@@ -111,20 +119,21 @@ function plot_refinement_trajectories!(
     refine_results::Vector{CriticalPointRefinementResult},
     raw_points::Vector{Vector{Float64}};
     # Selection
-    p_target::Union{Nothing, Vector{Float64}} = nothing,
+    p_target::Union{Nothing,Vector{Float64}} = nothing,
     n_show::Int = 10,
-    indices::Union{Nothing, Vector{Int}} = nothing,
+    indices::Union{Nothing,Vector{Int}} = nothing,
     # Projection
     dim_x::Int = 1,
     dim_y::Int = 2,
     # Clipping
-    clip_bounds::Union{Nothing, Vector{Vector{Float64}}} = nothing,
+    clip_bounds::Union{Nothing,Vector{Vector{Float64}}} = nothing,
     # Style
     style::RefinementTrajectoryStyle = RefinementTrajectoryStyle(),
-    label::Union{String, Nothing} = "refinement paths",
+    label::Union{String,Nothing} = "refinement paths",
 )::Int
-    length(refine_results) == length(raw_points) ||
-        error("refine_results ($(length(refine_results))) and raw_points ($(length(raw_points))) must have the same length")
+    length(refine_results) == length(raw_points) || error(
+        "refine_results ($(length(refine_results))) and raw_points ($(length(raw_points))) must have the same length",
+    )
 
     # ── Determine which trajectories to plot ─────────────────────────────────
     plot_indices = if indices !== nothing
@@ -162,8 +171,7 @@ function plot_refinement_trajectories!(
             xb = clip_bounds[1]  # [lo, hi] for dim_x
             yb = clip_bounds[2]  # [lo, hi] for dim_y
             any_inside = any(
-                xb[1] <= tx[k] <= xb[2] && yb[1] <= ty[k] <= yb[2]
-                for k in eachindex(tx)
+                xb[1] <= tx[k] <= xb[2] && yb[1] <= ty[k] <= yb[2] for k in eachindex(tx)
             )
             any_inside || continue
         end
@@ -173,28 +181,37 @@ function plot_refinement_trajectories!(
         # Legend entry only on first drawn trajectory
         lbl = (!legend_added && label !== nothing) ? label : nothing
 
-        lines!(ax, tx, ty;
-            color=(col, style.line_alpha),
-            linewidth=style.linewidth,
-            label=lbl,
+        lines!(
+            ax,
+            tx,
+            ty;
+            color = (col, style.line_alpha),
+            linewidth = style.linewidth,
+            label = lbl,
         )
 
         # Start marker (raw CP)
-        scatter!(ax, [tx[1]], [ty[1]];
-            marker=style.marker_start,
-            markersize=style.markersize_start,
-            color=col,
-            strokecolor=style.stroke_color,
-            strokewidth=style.stroke_width,
+        scatter!(
+            ax,
+            [tx[1]],
+            [ty[1]];
+            marker = style.marker_start,
+            markersize = style.markersize_start,
+            color = col,
+            strokecolor = style.stroke_color,
+            strokewidth = style.stroke_width,
         )
 
         # End marker (refined CP)
-        scatter!(ax, [tx[end]], [ty[end]];
-            marker=style.marker_end,
-            markersize=style.markersize_end,
-            color=col,
-            strokecolor=style.stroke_color,
-            strokewidth=style.stroke_width,
+        scatter!(
+            ax,
+            [tx[end]],
+            [ty[end]];
+            marker = style.marker_end,
+            markersize = style.markersize_end,
+            color = col,
+            strokecolor = style.stroke_color,
+            strokewidth = style.stroke_width,
         )
 
         legend_added = true

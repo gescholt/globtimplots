@@ -6,11 +6,9 @@ using Graphs
 using GraphMakie
 using NetworkLayout
 using GeometryBasics: Point, Point2f
-using Makie: RGBf, RGBAf, poly!
+using Makie: RGBf, RGBAf, poly! #==============================================================================#
 
-#==============================================================================#
 #                           DATA STRUCTURES                                     #
-#==============================================================================#
 
 """
     SubdomainNodeInfo
@@ -88,11 +86,9 @@ Base.@kwdef struct TreeVizStyle
 
     # Auto figure sizing
     auto_fig_size::Bool = true         # Automatically size figure based on tree
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           TREE EXTRACTION                                     #
-#==============================================================================#
 
 """
     extract_tree_data(tree) -> (Vector{SubdomainNodeInfo}, Set{Int}, Set{Int}, Int)
@@ -109,25 +105,26 @@ function extract_tree_data(tree)
         is_leaf = sd.children === nothing
         is_converged = id in converged_set
 
-        push!(nodes, SubdomainNodeInfo(
-            id,
-            is_leaf,
-            is_converged,
-            sd.split_dim,
-            sd.split_pos,
-            sd.l2_error,
-            sd.depth,
-            sd.children,
-            sd.parent_id
-        ))
+        push!(
+            nodes,
+            SubdomainNodeInfo(
+                id,
+                is_leaf,
+                is_converged,
+                sd.split_dim,
+                sd.split_pos,
+                sd.l2_error,
+                sd.depth,
+                sd.children,
+                sd.parent_id,
+            ),
+        )
     end
 
     return nodes, converged_set, active_set, tree.root_id
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           GRAPH CONVERSION                                    #
-#==============================================================================#
 
 """
     tree_to_graph(nodes::Vector{SubdomainNodeInfo}) -> SimpleDiGraph
@@ -147,11 +144,9 @@ function tree_to_graph(nodes::Vector{SubdomainNodeInfo})
     end
 
     return graph
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           CUSTOM LAYOUT                                       #
-#==============================================================================#
 
 """
     balanced_tree_layout(nodes::Vector{SubdomainNodeInfo}, root_id::Int; h_scale=10.0, v_spacing=1.5)
@@ -168,8 +163,12 @@ This visually shows WHERE in the domain each split occurred.
 - `h_scale`: Horizontal scaling factor (default 10.0) - spreads tree horizontally
 - `v_spacing`: Vertical spacing between levels (default 1.5)
 """
-function balanced_tree_layout(nodes::Vector{SubdomainNodeInfo}, root_id::Int;
-                              h_scale::Float64=10.0, v_spacing::Float64=1.5)
+function balanced_tree_layout(
+    nodes::Vector{SubdomainNodeInfo},
+    root_id::Int;
+    h_scale::Float64 = 10.0,
+    v_spacing::Float64 = 1.5,
+)
     n = length(nodes)
     positions = Vector{Point{2,Float64}}(undef, n)
 
@@ -228,13 +227,15 @@ BalancedTreeLayout(nodes::Vector{SubdomainNodeInfo}, root_id::Int) =
 
 # Make it callable for GraphMakie
 function (layout::BalancedTreeLayout)(graph)
-    return balanced_tree_layout(layout.nodes, layout.root_id;
-                                h_scale=layout.h_scale, v_spacing=layout.v_spacing)
-end
+    return balanced_tree_layout(
+        layout.nodes,
+        layout.root_id;
+        h_scale = layout.h_scale,
+        v_spacing = layout.v_spacing,
+    )
+end #==============================================================================#
 
-#==============================================================================#
 #                           AUTO-SCALING                                        #
-#==============================================================================#
 
 """
     compute_auto_scale(nodes::Vector{SubdomainNodeInfo}, style::TreeVizStyle) -> NamedTuple
@@ -256,7 +257,7 @@ function compute_auto_scale(nodes::Vector{SubdomainNodeInfo}, style::TreeVizStyl
             split_node_size = style.split_node_size,
             leaf_node_size = style.leaf_node_size,
             label_fontsize = style.label_fontsize,
-            edge_width = style.edge_width
+            edge_width = style.edge_width,
         )
     end
 
@@ -273,10 +274,10 @@ function compute_auto_scale(nodes::Vector{SubdomainNodeInfo}, style::TreeVizStyl
     end
 
     # Compute actual sizes with clamping
-    split_size = clamp(style.split_node_size * node_scale,
-                       style.min_node_size, style.max_node_size)
-    leaf_size = clamp(style.leaf_node_size * node_scale,
-                      style.min_node_size, style.max_node_size)
+    split_size =
+        clamp(style.split_node_size * node_scale, style.min_node_size, style.max_node_size)
+    leaf_size =
+        clamp(style.leaf_node_size * node_scale, style.min_node_size, style.max_node_size)
     fontsize = max(style.min_fontsize, round(Int, style.label_fontsize * font_scale))
     edge_w = max(1.0, style.edge_width * node_scale)
 
@@ -287,7 +288,7 @@ function compute_auto_scale(nodes::Vector{SubdomainNodeInfo}, style::TreeVizStyl
         split_node_size = split_size,
         leaf_node_size = leaf_size,
         label_fontsize = fontsize,
-        edge_width = edge_w
+        edge_width = edge_w,
     )
 end
 
@@ -311,11 +312,9 @@ function compute_figure_size(nodes::Vector{SubdomainNodeInfo}, style::TreeVizSty
     height = clamp((max_depth + 1) * 100 + 250, 400, 1400)
 
     return (round(Int, width), round(Int, height))
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           STYLING FUNCTIONS                                   #
-#==============================================================================#
 
 """
     compute_error_range(nodes::Vector{SubdomainNodeInfo}) -> Tuple{Float64,Float64}
@@ -323,7 +322,8 @@ end
 Compute min/max error range for active leaves (used for error gradient coloring).
 """
 function compute_error_range(nodes::Vector{SubdomainNodeInfo})
-    errors = [n.l2_error for n in nodes if n.is_leaf && !n.is_converged && isfinite(n.l2_error)]
+    errors =
+        [n.l2_error for n in nodes if n.is_leaf && !n.is_converged && isfinite(n.l2_error)]
     if isempty(errors)
         return (1e-10, 1.0)  # fallback
     end
@@ -344,8 +344,11 @@ end
 
 Determine node color based on node type, with error gradient for active leaves.
 """
-function get_node_color(node::SubdomainNodeInfo, style::TreeVizStyle,
-                        error_range::Tuple{Float64,Float64}=(1e-10, 1.0))
+function get_node_color(
+    node::SubdomainNodeInfo,
+    style::TreeVizStyle,
+    error_range::Tuple{Float64,Float64} = (1e-10, 1.0),
+)
     if node.is_leaf
         if node.is_converged
             return style.converged_color
@@ -354,7 +357,9 @@ function get_node_color(node::SubdomainNodeInfo, style::TreeVizStyle,
             min_err, max_err = error_range
             if max_err > min_err
                 # Use log scale for better visual spread
-                t = (log10(node.l2_error) - log10(min_err)) / (log10(max_err) - log10(min_err))
+                t =
+                    (log10(node.l2_error) - log10(min_err)) /
+                    (log10(max_err) - log10(min_err))
                 return get(ColorSchemes.RdYlGn, 1 - clamp(t, 0, 1))  # Reversed: 1=green, 0=red
             end
             return get(ColorSchemes.RdYlGn, 0.5)  # Middle color
@@ -394,7 +399,7 @@ end
 
 Create ASCII split position visualization: [----|---------]
 """
-function split_position_label(split_pos::Float64, width::Int=10)
+function split_position_label(split_pos::Float64, width::Int = 10)
     pos = round(Int, (split_pos + 1) / 2 * (width - 1))
     pos = clamp(pos, 0, width - 1)
     return "[" * "-"^pos * "|" * "-"^(width - 1 - pos) * "]"
@@ -428,10 +433,15 @@ Format node label for display.
 When balanced_layout is true, split position is encoded in edge lengths so we skip the ASCII viz.
 Labels are truncated to style.label_max_chars.
 """
-function format_node_label(node::SubdomainNodeInfo, nodes::Vector{SubdomainNodeInfo}, style::TreeVizStyle; balanced_layout::Bool=true)
+function format_node_label(
+    node::SubdomainNodeInfo,
+    nodes::Vector{SubdomainNodeInfo},
+    style::TreeVizStyle;
+    balanced_layout::Bool = true,
+)
     label = if node.is_leaf
         if style.show_error_values && isfinite(node.l2_error)
-            string(round(node.l2_error, sigdigits=2))
+            string(round(node.l2_error, sigdigits = 2))
         else
             ""
         end
@@ -460,22 +470,24 @@ function format_node_label(node::SubdomainNodeInfo, nodes::Vector{SubdomainNodeI
 
     # Truncate long labels
     if length(label) > style.label_max_chars
-        return label[1:style.label_max_chars-1] * "…"
+        return label[1:(style.label_max_chars-1)] * "…"
     end
     return label
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           DEPTH BANDS                                         #
-#==============================================================================#
 
 """
     draw_depth_bands!(ax, nodes, positions, style)
 
 Draw alternating horizontal bands at each tree depth for visual hierarchy.
 """
-function draw_depth_bands!(ax, nodes::Vector{SubdomainNodeInfo},
-                           positions::Vector{Point{2,Float64}}, style::TreeVizStyle)
+function draw_depth_bands!(
+    ax,
+    nodes::Vector{SubdomainNodeInfo},
+    positions::Vector{Point{2,Float64}},
+    style::TreeVizStyle,
+)
     !style.show_depth_bands && return
 
     max_depth = maximum(n.depth for n in nodes)
@@ -485,7 +497,7 @@ function draw_depth_bands!(ax, nodes::Vector{SubdomainNodeInfo},
     x_min, x_max = minimum(xs) - 2, maximum(xs) + 2
 
     # Get y-values per depth
-    y_by_depth = Dict{Int, Float64}()
+    y_by_depth = Dict{Int,Float64}()
     for (i, n) in enumerate(nodes)
         y_by_depth[n.depth] = positions[i][2]
     end
@@ -498,17 +510,20 @@ function draw_depth_bands!(ax, nodes::Vector{SubdomainNodeInfo},
         y = y_by_depth[d]
         band_height = style.vertical_spacing * 0.45
 
-        poly!(ax,
-            Point2f[(x_min, y - band_height), (x_max, y - band_height),
-                    (x_max, y + band_height), (x_min, y + band_height)],
-            color = style.depth_band_color
+        poly!(
+            ax,
+            Point2f[
+                (x_min, y - band_height),
+                (x_max, y - band_height),
+                (x_max, y + band_height),
+                (x_min, y + band_height),
+            ],
+            color = style.depth_band_color,
         )
     end
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           MAIN PLOTTING FUNCTION                              #
-#==============================================================================#
 
 """
     plot_subdivision_tree(tree; kwargs...) -> Figure
@@ -546,7 +561,7 @@ function plot_subdivision_tree(
     style::TreeVizStyle = TreeVizStyle(),
     title::String = "",
     show_legend::Bool = true,
-    balanced_layout::Bool = true
+    balanced_layout::Bool = true,
 )
     # Extract tree data
     nodes, _, _, root_id = extract_tree_data(tree)
@@ -567,7 +582,9 @@ function plot_subdivision_tree(
     node_colors = [get_node_color(n, style, error_range) for n in nodes]
     node_sizes = [n.is_leaf ? scale.leaf_node_size : scale.split_node_size for n in nodes]
     node_markers = [get_node_marker(n) for n in nodes]
-    node_labels = [format_node_label(n, nodes, style; balanced_layout=balanced_layout) for n in nodes]
+    node_labels = [
+        format_node_label(n, nodes, style; balanced_layout = balanced_layout) for n in nodes
+    ]
 
     # Prepare edge colors (colored by parent's split dimension)
     edge_colors = []
@@ -581,19 +598,21 @@ function plot_subdivision_tree(
     end
 
     # Create figure with computed size
-    fig = Figure(size=fig_size)
+    fig = Figure(size = fig_size)
 
     # Main axis for tree
-    ax = Axis(fig[1, 1],
+    ax = Axis(
+        fig[1, 1],
         title = isempty(title) ? "Subdivision Tree" : title,
         titlesize = style.title_fontsize,
-        aspect = DataAspect()
+        aspect = DataAspect(),
     )
     hidedecorations!(ax)
     hidespines!(ax)
 
     # Choose layout: balanced (split-aware) or standard Buchheim
-    layout_obj = balanced_layout ?
+    layout_obj =
+        balanced_layout ?
         BalancedTreeLayout(nodes, root_id, scale.h_scale, style.vertical_spacing) :
         Buchheim()
 
@@ -604,7 +623,9 @@ function plot_subdivision_tree(
     draw_depth_bands!(ax, nodes, positions, style)
 
     # Plot the graph with scaled attributes and node strokes
-    graphplot!(ax, graph,
+    graphplot!(
+        ax,
+        graph,
         layout = _ -> positions,  # Use precomputed positions
         node_color = node_colors,
         node_size = node_sizes,
@@ -616,7 +637,7 @@ function plot_subdivision_tree(
         nlabels = node_labels,
         nlabels_distance = max(8, round(Int, 12 * scale.font_scale)),
         nlabels_fontsize = scale.label_fontsize,
-        arrow_show = false
+        arrow_show = false,
     )
 
     # Add legend if requested
@@ -632,8 +653,12 @@ end
 
 Add legend to the figure showing dimension colors, leaf status, and error colorbar.
 """
-function _create_tree_legend!(fig, nodes::Vector{SubdomainNodeInfo}, style::TreeVizStyle,
-                              error_range::Tuple{Float64,Float64})
+function _create_tree_legend!(
+    fig,
+    nodes::Vector{SubdomainNodeInfo},
+    style::TreeVizStyle,
+    error_range::Tuple{Float64,Float64},
+)
     # Determine dimensions used
     dims_used = Set{Int}()
     for n in nodes
@@ -653,46 +678,67 @@ function _create_tree_legend!(fig, nodes::Vector{SubdomainNodeInfo}, style::Tree
     # Dimension entries
     for d in sort(collect(dims_used))
         color = get_dim_color(d, style)
-        push!(legend_entries, MarkerElement(color=color, marker=:rect, markersize=15))
+        push!(legend_entries, MarkerElement(color = color, marker = :rect, markersize = 15))
         push!(legend_labels, "x$d split")
     end
 
     # Leaf status entries
-    push!(legend_entries, MarkerElement(color=style.converged_color, marker=:star5, markersize=15))
+    push!(
+        legend_entries,
+        MarkerElement(color = style.converged_color, marker = :star5, markersize = 15),
+    )
     push!(legend_labels, "Converged")
 
     # For active leaves: show gradient info or single color
     if style.use_error_gradient
         # Show low/high error markers
-        push!(legend_entries, MarkerElement(color=get(ColorSchemes.RdYlGn, 1.0), marker=:circle, markersize=15))
+        push!(
+            legend_entries,
+            MarkerElement(
+                color = get(ColorSchemes.RdYlGn, 1.0),
+                marker = :circle,
+                markersize = 15,
+            ),
+        )
         push!(legend_labels, "Low error")
-        push!(legend_entries, MarkerElement(color=get(ColorSchemes.RdYlGn, 0.0), marker=:circle, markersize=15))
+        push!(
+            legend_entries,
+            MarkerElement(
+                color = get(ColorSchemes.RdYlGn, 0.0),
+                marker = :circle,
+                markersize = 15,
+            ),
+        )
         push!(legend_labels, "High error")
     else
-        push!(legend_entries, MarkerElement(color=style.active_color, marker=:circle, markersize=15))
+        push!(
+            legend_entries,
+            MarkerElement(color = style.active_color, marker = :circle, markersize = 15),
+        )
         push!(legend_labels, "Active")
     end
 
     # Add legend to figure
-    Legend(fig[1, 2], legend_entries, legend_labels,
+    Legend(
+        fig[1, 2],
+        legend_entries,
+        legend_labels,
         framevisible = true,
         backgroundcolor = (:white, 0.9),
-        padding = (10, 10, 10, 10)
+        padding = (10, 10, 10, 10),
     )
 
     # Legend column auto-sizes to fit content via tellwidth (Makie default)
-end
+end #==============================================================================#
 
-#==============================================================================#
 #                           SUMMARY STATISTICS                                  #
-#==============================================================================#
 
 """
     print_tree_summary(tree; io=stdout)
 
 Print summary statistics for a subdivision tree.
 """
-function print_tree_summary(tree; io=stdout)
+function print_tree_summary(tree; io = stdout)
     nodes, converged_set, active_set, _ = extract_tree_data(tree)
 
     n_total = length(converged_set) + length(active_set)
@@ -717,12 +763,13 @@ function print_tree_summary(tree; io=stdout)
     end
 
     println(io, "Subdivision Tree Summary")
-    println(io, "=" ^ 40)
+    println(io, "="^40)
     println(io, "Leaves: $n_total ($n_conv converged, $n_act active)")
     println(io, "Max depth: $max_depth")
 
     if !isempty(split_counts)
-        dims_str = join(["x$d=$(split_counts[d])" for d in sort(collect(keys(split_counts)))], " ")
+        dims_str =
+            join(["x$d=$(split_counts[d])" for d in sort(collect(keys(split_counts)))], " ")
         println(io, "Splits: $dims_str")
     end
 

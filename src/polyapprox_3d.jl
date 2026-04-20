@@ -31,12 +31,12 @@ function _plot_polyapprox_3d_impl(
     TR::AbstractProblemInput,
     df::DataFrame,
     df_min::DataFrame;
-    figure_size::Tuple{Int, Int} = (1000, 800),
-    z_limits::Union{Nothing, Tuple{Float64, Float64}} = nothing,
+    figure_size::Tuple{Int,Int} = (1000, 800),
+    z_limits::Union{Nothing,Tuple{Float64,Float64}} = nothing,
     show_captured::Bool = true,
     alpha_surface::Float64 = 0.7,
     fade::Bool = false,
-    z_cut = 0.25
+    z_cut = 0.25,
 )
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
     z_coords = pol.z
@@ -47,12 +47,7 @@ function _plot_polyapprox_3d_impl(
     end
 
     fig = Figure(size = figure_size)
-    ax = Axis3(
-        fig[1, 1],
-        xlabel = "x₁",
-        ylabel = "x₂",
-        zlabel = ""
-    )
+    ax = Axis3(fig[1, 1], xlabel = "x₁", ylabel = "x₂", zlabel = "")
 
     # Calculate z_limits if not provided (filter non-finite values from ODE solver failures)
     if isnothing(z_limits)
@@ -62,7 +57,9 @@ function _plot_polyapprox_3d_impl(
         append!(z_values, z_coords)
         finite_z = filter(isfinite, z_values)
         if isempty(finite_z)
-            error("No finite z-values among critical points — cannot determine contour z_limits")
+            error(
+                "No finite z-values among critical points — cannot determine contour z_limits",
+            )
         end
         z_limits = (minimum(finite_z), maximum(finite_z))
     end
@@ -78,7 +75,8 @@ function _plot_polyapprox_3d_impl(
         i = findlast(≈(y), y_unique)
         j = findlast(≈(x), x_unique)
         if !isnothing(i) && !isnothing(j)
-            if !isfinite(z) || (!isnothing(z_limits) && (z < z_limits[1] || z > z_limits[2]))
+            if !isfinite(z) ||
+               (!isnothing(z_limits) && (z < z_limits[1] || z > z_limits[2]))
                 Z[j, i] = NaN
             else
                 Z[j, i] = z
@@ -110,7 +108,7 @@ function _plot_polyapprox_3d_impl(
             colormap = :viridis,
             transparency = true,
             alpha = alpha_surface,
-            colorrange = z_limits
+            colorrange = z_limits,
         )
 
         for fade_level in 1:10
@@ -135,7 +133,7 @@ function _plot_polyapprox_3d_impl(
                 colormap = :viridis,
                 transparency = true,
                 alpha = fade_alpha,
-                colorrange = z_limits
+                colorrange = z_limits,
             )
         end
     else
@@ -147,7 +145,7 @@ function _plot_polyapprox_3d_impl(
             colormap = :viridis,
             transparency = true,
             alpha = alpha_surface,
-            colorrange = z_limits
+            colorrange = z_limits,
         )
     end
 
@@ -168,7 +166,7 @@ function _plot_polyapprox_3d_impl(
                 color = :green,
                 strokecolor = :black,
                 strokewidth = 1,
-                label = "Near"
+                label = "Near",
             )
         end
 
@@ -183,7 +181,7 @@ function _plot_polyapprox_3d_impl(
                 color = :white,
                 strokecolor = :black,
                 strokewidth = 1,
-                label = "Far"
+                label = "Far",
             )
         end
     else
@@ -194,7 +192,7 @@ function _plot_polyapprox_3d_impl(
             df.z,
             markersize = 20,
             color = :orange,
-            label = "All Points"
+            label = "All Points",
         )
     end
 
@@ -210,7 +208,7 @@ function _plot_polyapprox_3d_impl(
                 markersize = 40,
                 marker = :diamond,
                 color = :red,
-                label = "Uncaptured"
+                label = "Uncaptured",
             )
         end
 
@@ -225,7 +223,7 @@ function _plot_polyapprox_3d_impl(
                     markersize = 40,
                     marker = :diamond,
                     color = :blue,
-                    label = "Captured"
+                    label = "Captured",
                 )
             end
         end

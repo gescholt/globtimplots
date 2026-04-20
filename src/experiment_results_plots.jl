@@ -22,68 +22,100 @@ Makie calls.  Both the interactive and static entry points delegate here.
 function _build_experiment_results_figure(
     experiment_name::String,
     metrics::NamedTuple;
-    fig_size::Tuple{Int,Int} = (1400, 900)
+    fig_size::Tuple{Int,Int} = (1400, 900),
 )
     fig = Figure(size = fig_size)
 
     # Plot 1: L2 Norm vs Degree
-    ax1 = Axis(fig[1, 1],
+    ax1 = Axis(
+        fig[1, 1],
         title = "L2 Norm of Polynomial Approximation",
         xlabel = "Polynomial Degree",
         ylabel = "L2 Norm (log scale)",
-        yscale = log10
+        yscale = log10,
     )
-    scatterlines!(ax1, metrics.degrees, metrics.l2_norms,
-        color = :blue, markersize = 15, linewidth = 3,
-        label = "L2 Approximation Error")
+    scatterlines!(
+        ax1,
+        metrics.degrees,
+        metrics.l2_norms,
+        color = :blue,
+        markersize = 15,
+        linewidth = 3,
+        label = "L2 Approximation Error",
+    )
     axislegend(ax1, position = :rt)
 
     # Plot 2: Euclidean Distance to True Parameters
     has_distances = any(!isnan, metrics.min_distances)
     if has_distances
-        ax2 = Axis(fig[1, 2],
+        ax2 = Axis(
+            fig[1, 2],
             title = "Euclidean Distance to True Parameters",
             xlabel = "Polynomial Degree",
             ylabel = "Distance (log scale)",
-            yscale = log10
+            yscale = log10,
         )
 
         # Min distance (best critical point)
-        scatterlines!(ax2, metrics.degrees, metrics.min_distances,
-            color = :green, markersize = 15, linewidth = 3,
-            label = "Min Distance")
+        scatterlines!(
+            ax2,
+            metrics.degrees,
+            metrics.min_distances,
+            color = :green,
+            markersize = 15,
+            linewidth = 3,
+            label = "Min Distance",
+        )
 
         # Mean distance (average over all critical points)
         if any(!isnan, metrics.mean_distances)
-            scatterlines!(ax2, metrics.degrees, metrics.mean_distances,
-                color = :orange, markersize = 12, linewidth = 2,
-                label = "Mean Distance", linestyle = :dash)
+            scatterlines!(
+                ax2,
+                metrics.degrees,
+                metrics.mean_distances,
+                color = :orange,
+                markersize = 12,
+                linewidth = 2,
+                label = "Mean Distance",
+                linestyle = :dash,
+            )
         end
 
         axislegend(ax2, position = :rt)
     else
-        ax2 = Axis(fig[1, 2],
+        ax2 = Axis(
+            fig[1, 2],
             title = "Distance to True Parameters (N/A)",
             xlabel = "Polynomial Degree",
-            ylabel = "Distance"
+            ylabel = "Distance",
         )
-        text!(ax2, "No true parameters available\nfor this experiment",
+        text!(
+            ax2,
+            "No true parameters available\nfor this experiment",
             position = (mean(metrics.degrees), 0.5),
             align = (:center, :center),
-            fontsize = 16)
+            fontsize = 16,
+        )
     end
 
     # Plot 3: Condition Number vs Degree
     has_conditions = any(!isnan, metrics.condition_numbers)
     if has_conditions
-        ax3 = Axis(fig[2, 1],
+        ax3 = Axis(
+            fig[2, 1],
             title = "Condition Number (Numerical Stability)",
             xlabel = "Polynomial Degree",
-            ylabel = "Condition Number"
+            ylabel = "Condition Number",
         )
-        scatterlines!(ax3, metrics.degrees, metrics.condition_numbers,
-            color = :red, markersize = 15, linewidth = 3,
-            label = "Condition Number")
+        scatterlines!(
+            ax3,
+            metrics.degrees,
+            metrics.condition_numbers,
+            color = :red,
+            markersize = 15,
+            linewidth = 3,
+            label = "Condition Number",
+        )
         axislegend(ax3, position = :rt)
     end
 
@@ -91,11 +123,12 @@ function _build_experiment_results_figure(
     if has_distances && length(metrics.min_distances) >= 2
         valid_idx = findall(!isnan, metrics.min_distances)
         if length(valid_idx) >= 2
-            ax4 = Axis(fig[2, 2],
+            ax4 = Axis(
+                fig[2, 2],
                 title = "Parameter Convergence Rate",
                 xlabel = "Polynomial Degree",
                 ylabel = "Convergence Rate (log scale)",
-                yscale = log10
+                yscale = log10,
             )
 
             # Compute rate: ratio of consecutive distances
@@ -110,9 +143,15 @@ function _build_experiment_results_figure(
             end
 
             if !isempty(conv_rates)
-                scatterlines!(ax4, conv_degrees, conv_rates,
-                    color = :purple, markersize = 15, linewidth = 3,
-                    label = "Convergence Factor")
+                scatterlines!(
+                    ax4,
+                    conv_degrees,
+                    conv_rates,
+                    color = :purple,
+                    markersize = 15,
+                    linewidth = 3,
+                    label = "Convergence Factor",
+                )
                 axislegend(ax4, position = :rt)
             end
         end
@@ -139,7 +178,7 @@ Parameters:
 function plot_experiment_results_interactive(
     experiment_name::String,
     metrics::NamedTuple;
-    fig_size::Tuple{Int,Int} = (1400, 900)
+    fig_size::Tuple{Int,Int} = (1400, 900),
 )
     fig = _build_experiment_results_figure(experiment_name, metrics; fig_size)
     display(fig)
@@ -163,7 +202,7 @@ function plot_experiment_results_static(
     experiment_name::String,
     metrics::NamedTuple;
     output_file::String = "experiment_results.png",
-    fig_size::Tuple{Int,Int} = (1400, 900)
+    fig_size::Tuple{Int,Int} = (1400, 900),
 )
     fig = _build_experiment_results_figure(experiment_name, metrics; fig_size)
     save(output_file, fig, px_per_unit = 2)

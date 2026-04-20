@@ -21,13 +21,13 @@ using Globtim  # for extract_all_eigenvalues_for_visualization, match_raw_to_ref
 
 Scatter plot of Hessian Frobenius norms, colored by critical-point type.
 """
-function plot_hessian_norms(df::DataFrames.DataFrame; fig_size::Tuple{Int,Int}=(800, 600))
+function plot_hessian_norms(df::DataFrames.DataFrame; fig_size::Tuple{Int,Int} = (800, 600))
     fig = Figure(size = fig_size)
     ax = Axis(
         fig[1, 1],
         xlabel = "Critical Point Index",
         ylabel = "Hessian L2 Norm",
-        title = "L2 Norm of Hessian Matrices"
+        title = "L2 Norm of Hessian Matrices",
     )
 
     if "critical_point_type" in names(df)
@@ -38,7 +38,7 @@ function plot_hessian_norms(df::DataFrames.DataFrame; fig_size::Tuple{Int,Int}=(
                 findall(mask),
                 df.hessian_norm[mask],
                 label = string(classification),
-                markersize = 8
+                markersize = 8,
             )
         end
         axislegend(ax)
@@ -58,14 +58,17 @@ end
 
 Log-scale scatter plot of Hessian condition numbers κ(H) = |λ_max|/|λ_min|.
 """
-function plot_condition_numbers(df::DataFrames.DataFrame; fig_size::Tuple{Int,Int}=(800, 600))
+function plot_condition_numbers(
+    df::DataFrames.DataFrame;
+    fig_size::Tuple{Int,Int} = (800, 600),
+)
     fig = Figure(size = fig_size)
     ax = Axis(
         fig[1, 1],
         xlabel = "Critical Point Index",
         ylabel = "Condition Number (log scale)",
         title = "Condition Numbers of Hessian Matrices",
-        yscale = log10
+        yscale = log10,
     )
 
     valid_indices = findall(x -> isfinite(x) && x > 0, df.hessian_condition_number)
@@ -82,7 +85,7 @@ function plot_condition_numbers(df::DataFrames.DataFrame; fig_size::Tuple{Int,In
                     indices,
                     df.hessian_condition_number[indices],
                     label = string(classification),
-                    markersize = 8
+                    markersize = 8,
                 )
             end
         end
@@ -92,7 +95,7 @@ function plot_condition_numbers(df::DataFrames.DataFrame; fig_size::Tuple{Int,In
             ax,
             valid_indices,
             df.hessian_condition_number[valid_indices],
-            markersize = 8
+            markersize = 8,
         )
     end
 
@@ -109,7 +112,10 @@ end
 Two-panel plot: smallest positive eigenvalues (minima) and largest negative
 eigenvalues (maxima).
 """
-function plot_critical_eigenvalues(df::DataFrames.DataFrame; fig_size::Tuple{Int,Int}=(1200, 500))
+function plot_critical_eigenvalues(
+    df::DataFrames.DataFrame;
+    fig_size::Tuple{Int,Int} = (1200, 500),
+)
     fig = Figure(size = fig_size)
 
     # Plot 1: Smallest positive eigenvalues for minima
@@ -117,7 +123,7 @@ function plot_critical_eigenvalues(df::DataFrames.DataFrame; fig_size::Tuple{Int
         fig[1, 1],
         xlabel = "Minimum Index",
         ylabel = "Smallest Positive Eigenvalue",
-        title = "Smallest Positive Eigenvalues (Minima)"
+        title = "Smallest Positive Eigenvalues (Minima)",
     )
 
     minima_mask = df.critical_point_type .== :minimum
@@ -130,15 +136,9 @@ function plot_critical_eigenvalues(df::DataFrames.DataFrame; fig_size::Tuple{Int
             valid_minima,
             df.smallest_positive_eigenval[minima_mask][valid_minima],
             color = :blue,
-            markersize = 10
+            markersize = 10,
         )
-        hlines!(
-            ax1,
-            [1e-12],
-            color = :red,
-            linestyle = :dash,
-            label = "Numerical Zero"
-        )
+        hlines!(ax1, [1e-12], color = :red, linestyle = :dash, label = "Numerical Zero")
         axislegend(ax1)
     end
 
@@ -147,7 +147,7 @@ function plot_critical_eigenvalues(df::DataFrames.DataFrame; fig_size::Tuple{Int
         fig[1, 2],
         xlabel = "Maximum Index",
         ylabel = "Largest Negative Eigenvalue",
-        title = "Largest Negative Eigenvalues (Maxima)"
+        title = "Largest Negative Eigenvalues (Maxima)",
     )
 
     maxima_mask = df.critical_point_type .== :maximum
@@ -160,15 +160,9 @@ function plot_critical_eigenvalues(df::DataFrames.DataFrame; fig_size::Tuple{Int
             valid_maxima,
             df.largest_negative_eigenval[maxima_mask][valid_maxima],
             color = :red,
-            markersize = 10
+            markersize = 10,
         )
-        hlines!(
-            ax2,
-            [-1e-12],
-            color = :red,
-            linestyle = :dash,
-            label = "Numerical Zero"
-        )
+        hlines!(ax2, [-1e-12], color = :red, linestyle = :dash, label = "Numerical Zero")
         axislegend(ax2)
     end
 
@@ -190,7 +184,7 @@ function plot_all_eigenvalues(
     f::Function,
     df::DataFrames.DataFrame;
     sort_by = :magnitude,
-    fig_size::Union{Tuple{Int,Int},Nothing} = nothing
+    fig_size::Union{Tuple{Int,Int},Nothing} = nothing,
 )
     all_eigenvalues = Globtim.extract_all_eigenvalues_for_visualization(f, df)
 
@@ -231,7 +225,7 @@ function plot_all_eigenvalues(
                 type_indices[ptype] = sort(
                     type_mask,
                     by = i -> maximum(all_eigenvalues[i]) - minimum(all_eigenvalues[i]),
-                    rev = true
+                    rev = true,
                 )
             else  # :index
                 type_indices[ptype] = type_mask
@@ -273,7 +267,7 @@ function plot_all_eigenvalues(
             xlabel = "$(uppercase(string(ptype))) Point Index (sorted by $(sort_by))",
             ylabel = y_label,
             title = plot_title,
-            xgridvisible = false
+            xgridvisible = false,
         )
 
         for (plot_idx, orig_idx) in enumerate(sorted_indices)
@@ -288,7 +282,7 @@ function plot_all_eigenvalues(
                 color = type_color,
                 linestyle = :dot,
                 linewidth = 1,
-                alpha = 0.7
+                alpha = 0.7,
             )
 
             for (eig_idx, (eigenval, plot_val)) in enumerate(zip(eigenvals, plot_vals))
@@ -300,7 +294,7 @@ function plot_all_eigenvalues(
                     marker = :circle,
                     markersize = 8,
                     strokecolor = type_color,
-                    strokewidth = 1.5
+                    strokewidth = 1.5,
                 )
             end
         end
@@ -312,11 +306,8 @@ function plot_all_eigenvalues(
 
     # Eigenvalue legend
     eigenval_legend_elements = [
-        MarkerElement(
-            color = eigenval_colors[i],
-            marker = :circle,
-            markersize = 10
-        ) for i in 1:min(n_dims, length(eigenval_colors))
+        MarkerElement(color = eigenval_colors[i], marker = :circle, markersize = 10) for
+        i in 1:min(n_dims, length(eigenval_colors))
     ]
     eigenval_legend_labels = eigenval_labels[1:min(n_dims, length(eigenval_labels))]
 
@@ -327,7 +318,7 @@ function plot_all_eigenvalues(
             marker = :circle,
             markersize = 10,
             strokecolor = CP_TYPE_TABLE[normalize_cp_key(ptype)].color,
-            strokewidth = 2
+            strokewidth = 2,
         ) for ptype in available_types
     ]
     type_legend_labels = ["$(uppercase(string(ptype))) Points" for ptype in available_types]
@@ -338,7 +329,7 @@ function plot_all_eigenvalues(
         eigenval_legend_labels,
         "Eigenvalue Order",
         tellheight = false,
-        framevisible = true
+        framevisible = true,
     )
     Legend(
         fig[1:n_types, 3],
@@ -346,7 +337,7 @@ function plot_all_eigenvalues(
         type_legend_labels,
         "Critical Point Type",
         tellheight = false,
-        framevisible = true
+        framevisible = true,
     )
 
     return fig
@@ -367,7 +358,7 @@ function plot_raw_vs_refined_eigenvalues(
     df_raw::DataFrames.DataFrame,
     df_refined::DataFrames.DataFrame;
     sort_by = :euclidean_distance,
-    fig_size::Union{Tuple{Int,Int},Nothing} = nothing
+    fig_size::Union{Tuple{Int,Int},Nothing} = nothing,
 )
     matches = Globtim.match_raw_to_refined_points(df_raw, df_refined)
 
@@ -429,7 +420,7 @@ function plot_raw_vs_refined_eigenvalues(
             xlabel = "Matched Pair Index (sorted by $(sort_by))",
             ylabel = "Eigenvalue Magnitude",
             title = plot_title,
-            xgridvisible = false
+            xgridvisible = false,
         )
 
         for (pair_idx, (raw_idx, refined_idx, distance)) in enumerate(type_matches)
@@ -462,7 +453,7 @@ function plot_raw_vs_refined_eigenvalues(
                     markersize = 8,
                     strokecolor = type_color,
                     strokewidth = 1.5,
-                    alpha = 0.6
+                    alpha = 0.6,
                 )
             end
 
@@ -478,7 +469,7 @@ function plot_raw_vs_refined_eigenvalues(
                     markersize = 8,
                     strokecolor = type_color,
                     strokewidth = 1.5,
-                    alpha = 1.0
+                    alpha = 1.0,
                 )
             end
 
@@ -494,7 +485,7 @@ function plot_raw_vs_refined_eigenvalues(
                     color = eigenval_colors[min(eig_idx, length(eigenval_colors))],
                     linestyle = :solid,
                     linewidth = 1.5,
-                    alpha = 0.7
+                    alpha = 0.7,
                 )
             end
 
@@ -507,47 +498,27 @@ function plot_raw_vs_refined_eigenvalues(
                     text = "d=$(round(distance, digits=3))",
                     fontsize = 8,
                     color = :gray,
-                    align = (:center, :top)
+                    align = (:center, :top),
                 )
             end
         end
 
         hlines!(ax, [0], color = :black, linestyle = :dash, alpha = 0.5)
 
-        hlines!(
-            ax,
-            [0],
-            color = type_color,
-            linestyle = :solid,
-            alpha = 0.3,
-            linewidth = 2
-        )
+        hlines!(ax, [0], color = type_color, linestyle = :solid, alpha = 0.3, linewidth = 2)
     end
 
     # Legends
     n_dims = length(raw_eigenvalues) > 0 ? length(filter(!isnan, raw_eigenvalues[1])) : 3
     eigenval_legend_elements = [
-        MarkerElement(
-            color = eigenval_colors[i],
-            marker = :circle,
-            markersize = 10
-        ) for i in 1:min(n_dims, length(eigenval_colors))
+        MarkerElement(color = eigenval_colors[i], marker = :circle, markersize = 10) for
+        i in 1:min(n_dims, length(eigenval_colors))
     ]
     eigenval_legend_labels = ["λ$i" for i in 1:min(n_dims, length(eigenval_colors))]
 
     raw_refined_elements = [
-        MarkerElement(
-            color = :blue,
-            marker = :circle,
-            markersize = 10,
-            alpha = 0.6
-        ),
-        MarkerElement(
-            color = :blue,
-            marker = :circle,
-            markersize = 10,
-            alpha = 1.0
-        )
+        MarkerElement(color = :blue, marker = :circle, markersize = 10, alpha = 0.6),
+        MarkerElement(color = :blue, marker = :circle, markersize = 10, alpha = 1.0),
     ]
     raw_refined_labels = ["Raw (polynomial)", "Refined (BFGS)"]
 
@@ -557,7 +528,7 @@ function plot_raw_vs_refined_eigenvalues(
         eigenval_legend_labels,
         "Eigenvalue Order",
         tellheight = false,
-        framevisible = true
+        framevisible = true,
     )
     Legend(
         fig[1:n_types, 3],
@@ -565,7 +536,7 @@ function plot_raw_vs_refined_eigenvalues(
         raw_refined_labels,
         "Point Type",
         tellheight = false,
-        framevisible = true
+        framevisible = true,
     )
 
     return fig

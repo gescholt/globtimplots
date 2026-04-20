@@ -16,14 +16,14 @@ should use this table (or the `cp_type_appearance` helper) instead of
 defining local color/marker constants.
 """
 const CP_TYPE_TABLE = (
-    min              = (color = :green3,     marker = :circle,    label = "Min"),
-    saddle           = (color = :dodgerblue, marker = :dtriangle, label = "Saddle"),
-    max              = (color = :red,        marker = :rect,      label = "Max"),
-    degenerate       = (color = :magenta,    marker = :diamond,   label = "Degenerate"),
-    degenerate_min   = (color = :green3,     marker = :pentagon,  label = "Degen. Min"),
-    degenerate_max   = (color = :red,        marker = :pentagon,  label = "Degen. Max"),
-    degenerate_saddle= (color = :dodgerblue, marker = :pentagon,  label = "Degen. Saddle"),
-    unknown          = (color = :gray50,     marker = :diamond,   label = "Unknown"),
+    min = (color = :green3, marker = :circle, label = "Min"),
+    saddle = (color = :dodgerblue, marker = :dtriangle, label = "Saddle"),
+    max = (color = :red, marker = :rect, label = "Max"),
+    degenerate = (color = :magenta, marker = :diamond, label = "Degenerate"),
+    degenerate_min = (color = :green3, marker = :pentagon, label = "Degen. Min"),
+    degenerate_max = (color = :red, marker = :pentagon, label = "Degen. Max"),
+    degenerate_saddle = (color = :dodgerblue, marker = :pentagon, label = "Degen. Saddle"),
+    unknown = (color = :gray50, marker = :diamond, label = "Unknown"),
 )
 
 """
@@ -112,7 +112,7 @@ See also: [`AbstractPolynomialData`](@ref), [`adapt_polynomial_data`](@ref)
 Base.@kwdef struct GenericPolynomialData <: AbstractPolynomialData
     coeffs::Any
     basis::Symbol = :chebyshev
-    scale_factor::Union{Float64, Vector{Float64}} = 1.0
+    scale_factor::Union{Float64,Vector{Float64}} = 1.0
     grid::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)
     z::Vector{Float64} = Float64[]
     precision::Any = nothing
@@ -134,11 +134,15 @@ See also: [`AbstractProblemInput`](@ref), [`adapt_problem_input`](@ref)
 Base.@kwdef struct GenericProblemInput <: AbstractProblemInput
     dim::Int = 2
     center::Vector{Float64} = [0.0, 0.0]
-    sample_range::Union{Float64, Vector{Float64}} = 1.0
+    sample_range::Union{Float64,Vector{Float64}} = 1.0
 end
 
 # Helper function to extract coordinates from coordinate data
-function transform_coordinates(scale_factor::Union{Float64, Vector{Float64}}, grid::Matrix, center::Vector)
+function transform_coordinates(
+    scale_factor::Union{Float64,Vector{Float64}},
+    grid::Matrix,
+    center::Vector,
+)
     # Default implementation - scale and translate grid points
     coords = similar(grid)
     for i in axes(grid, 1)
@@ -205,11 +209,15 @@ function adapt_polynomial_data(globtim_poly)
     GenericPolynomialData(
         coeffs = hasfield(typeof(globtim_poly), :coeffs) ? globtim_poly.coeffs : nothing,
         basis = hasfield(typeof(globtim_poly), :basis) ? globtim_poly.basis : :chebyshev,
-        scale_factor = hasfield(typeof(globtim_poly), :scale_factor) ? globtim_poly.scale_factor : 1.0,
-        grid = hasfield(typeof(globtim_poly), :grid) ? globtim_poly.grid : Matrix{Float64}(undef, 0, 0),
+        scale_factor = hasfield(typeof(globtim_poly), :scale_factor) ?
+                       globtim_poly.scale_factor : 1.0,
+        grid = hasfield(typeof(globtim_poly), :grid) ? globtim_poly.grid :
+               Matrix{Float64}(undef, 0, 0),
         z = hasfield(typeof(globtim_poly), :z) ? globtim_poly.z : Float64[],
-        precision = hasfield(typeof(globtim_poly), :precision) ? globtim_poly.precision : nothing,
-        normalized = hasfield(typeof(globtim_poly), :normalized) ? globtim_poly.normalized : false
+        precision = hasfield(typeof(globtim_poly), :precision) ? globtim_poly.precision :
+                    nothing,
+        normalized = hasfield(typeof(globtim_poly), :normalized) ? globtim_poly.normalized :
+                     false,
     )
 end
 
@@ -266,7 +274,9 @@ function adapt_problem_input(globtim_input)
     # Extract common fields that plotting functions need
     GenericProblemInput(
         dim = hasfield(typeof(globtim_input), :dim) ? globtim_input.dim : 2,
-        center = hasfield(typeof(globtim_input), :center) ? globtim_input.center : [0.0, 0.0],
-        sample_range = hasfield(typeof(globtim_input), :sample_range) ? globtim_input.sample_range : 1.0
+        center = hasfield(typeof(globtim_input), :center) ? globtim_input.center :
+                 [0.0, 0.0],
+        sample_range = hasfield(typeof(globtim_input), :sample_range) ?
+                       globtim_input.sample_range : 1.0,
     )
 end

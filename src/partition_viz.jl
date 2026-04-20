@@ -22,10 +22,10 @@ Base.@kwdef struct PartitionStyle
     label_color::Symbol = :white
 
     # Figure sizing
-    fig_size::Tuple{Int, Int} = (600, 600)
+    fig_size::Tuple{Int,Int} = (600, 600)
 
     # Domain limits (default to [-1,1]²)
-    domain_limits::Tuple{Float64, Float64, Float64, Float64} = (-1.0, 1.0, -1.0, 1.0)
+    domain_limits::Tuple{Float64,Float64,Float64,Float64} = (-1.0, 1.0, -1.0, 1.0)
 
     # Colorbar
     show_colorbar::Bool = true
@@ -68,7 +68,7 @@ function plot_2d_partition(
     title::String = "Domain Partition",
     style::PartitionStyle = PartitionStyle(),
     fig = nothing,
-    ax = nothing
+    ax = nothing,
 )
     # Validate color_by
     color_by in (:l2_error, :degree) || error("color_by must be :l2_error or :degree")
@@ -102,17 +102,19 @@ function plot_2d_partition(
 
     # Create figure if not provided
     if isnothing(fig)
-        fig = Figure(size=style.fig_size)
+        fig = Figure(size = style.fig_size)
     end
 
     # Create axis if not provided
     if isnothing(ax)
         xmin, xmax, ymin, ymax = style.domain_limits
-        ax = Axis(fig[1, 1],
-            title=title,
-            xlabel="x₁", ylabel="x₂",
-            aspect=DataAspect(),
-            limits=(xmin, xmax, ymin, ymax)
+        ax = Axis(
+            fig[1, 1],
+            title = title,
+            xlabel = "x₁",
+            ylabel = "x₂",
+            aspect = DataAspect(),
+            limits = (xmin, xmax, ymin, ymax),
         )
     end
 
@@ -126,33 +128,39 @@ function plot_2d_partition(
             center[1] - hw[1],  # x_min
             center[2] - hw[2],  # y_min
             2 * hw[1],          # width
-            2 * hw[2]           # height
+            2 * hw[2],           # height
         )
 
-        poly!(ax, rect,
-            color=colors[i],
-            strokewidth=style.strokewidth,
-            strokecolor=style.strokecolor
+        poly!(
+            ax,
+            rect,
+            color = colors[i],
+            strokewidth = style.strokewidth,
+            strokecolor = style.strokecolor,
         )
 
         # Add label at center
         if style.show_labels
             id = getfield_or_index(sub, :id)
-            text!(ax, center[1], center[2],
-                text=string(id),
-                align=(:center, :center),
-                fontsize=style.label_fontsize,
-                color=style.label_color
+            text!(
+                ax,
+                center[1],
+                center[2],
+                text = string(id),
+                align = (:center, :center),
+                fontsize = style.label_fontsize,
+                color = style.label_color,
             )
         end
     end
 
     # Add colorbar
     if style.show_colorbar
-        Colorbar(fig[1, 2],
-            colormap=style.colormap,
-            limits=(vmin, vmax),
-            label=colorbar_label
+        Colorbar(
+            fig[1, 2],
+            colormap = style.colormap,
+            limits = (vmin, vmax),
+            label = colorbar_label,
         )
     end
 
@@ -187,33 +195,24 @@ fig = plot_l2_trajectories(trajectories)
 ```
 """
 function plot_l2_trajectories(
-    trajectories::Dict{String, Vector{Float64}};
+    trajectories::Dict{String,Vector{Float64}};
     title::String = "L2 Error Evolution",
     yscale = log10,
     xlabel::String = "Step",
     ylabel::String = "L2 Error",
-    fig_size::Tuple{Int, Int} = (800, 500)
+    fig_size::Tuple{Int,Int} = (800, 500),
 )
     isempty(trajectories) && error("No trajectories to plot")
 
-    fig = Figure(size=fig_size)
-    ax = Axis(fig[1, 1],
-        title=title,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        yscale=yscale
-    )
+    fig = Figure(size = fig_size)
+    ax = Axis(fig[1, 1], title = title, xlabel = xlabel, ylabel = ylabel, yscale = yscale)
 
     # Use Dark2 colors for distinguishable lines
     colors = ColorSchemes.Dark2_8
 
     for (i, (name, traj)) in enumerate(sort(collect(trajectories)))
         color = colors[mod1(i, length(colors))]
-        lines!(ax, 1:length(traj), traj,
-            label=name,
-            linewidth=2,
-            color=color
-        )
+        lines!(ax, 1:length(traj), traj, label = name, linewidth = 2, color = color)
     end
 
     # Add legend

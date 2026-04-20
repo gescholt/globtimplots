@@ -38,7 +38,7 @@ function analyze_convergence_distances(df::DataFrame)
         return (
             maximum = maximum(min_distances),
             average = mean(min_distances),
-            minimum = minimum(min_distances)
+            minimum = minimum(min_distances),
         )
     end
 end
@@ -74,7 +74,7 @@ function analyze_captured_distances(df::DataFrame, df_check::DataFrame)
         return (
             maximum = maximum(min_distances),
             average = mean(min_distances),
-            minimum = minimum(min_distances)
+            minimum = minimum(min_distances),
         )
     end
 end
@@ -82,8 +82,13 @@ end
 """
 Plot the discrete L2-norm approximation error attained by the polynomial approximant.
 """
-function plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int;
-                          fig_size::Tuple{Int,Int}=(700, 500))
+function plot_discrete_l2(
+    results,
+    start_degree::Int,
+    end_degree::Int,
+    step::Int;
+    fig_size::Tuple{Int,Int} = (700, 500),
+)
     # Filter to only include degrees that succeeded
     all_degrees = start_degree:step:end_degree
     degrees = filter(d -> haskey(results, d), all_degrees)
@@ -110,7 +115,7 @@ function plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int
         ygridvisible = true,
         xgridstyle = :dash,
         ygridstyle = :dash,
-        xticks = degrees
+        xticks = degrees,
     )
 
     # Plot the curve with points at each degree
@@ -121,7 +126,7 @@ function plot_discrete_l2(results, start_degree::Int, end_degree::Int, step::Int
         color = :darkblue,
         markersize = 10,
         linewidth = 2.5,
-        label = "L² Norm"
+        label = "L² Norm",
     )
 
     axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
@@ -138,7 +143,7 @@ function plot_convergence_analysis(
     end_degree::Int,
     step::Int;
     show_legend::Bool = true,
-    fig_size::Tuple{Int,Int} = (700, 500)
+    fig_size::Tuple{Int,Int} = (700, 500),
 )
     # Filter to only include degrees that succeeded
     all_degrees = start_degree:step:end_degree
@@ -168,20 +173,26 @@ function plot_convergence_analysis(
         ygridvisible = true,
         xgridstyle = :dash,
         ygridstyle = :dash,
-        xticks = degrees
+        xticks = degrees,
     )
 
-    scatterlines!(ax, degrees, max_distances,
+    scatterlines!(
+        ax,
+        degrees,
+        max_distances,
         label = "Maximum",
         color = :crimson,
         markersize = 10,
-        linewidth = 2.5
+        linewidth = 2.5,
     )
-    scatterlines!(ax, degrees, avg_distances,
+    scatterlines!(
+        ax,
+        degrees,
+        avg_distances,
         label = "Average",
         color = :steelblue,
         markersize = 10,
-        linewidth = 2.5
+        linewidth = 2.5,
     )
 
     axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
@@ -231,12 +242,12 @@ function cairo_plot_polyapprox_levelset(
     TR::AbstractProblemInput,
     df::DataFrame,
     df_min::DataFrame;
-    figure_size::Tuple{Int, Int} = (1000, 600),
-    z_limits::Union{Nothing, Tuple{Float64, Float64}} = nothing,
+    figure_size::Tuple{Int,Int} = (1000, 600),
+    z_limits::Union{Nothing,Tuple{Float64,Float64}} = nothing,
     chebyshev_levels::Bool = false,
     num_levels::Int = 30,
     show_captured::Bool = true,
-    colormap::Symbol = :viridis
+    colormap::Symbol = :viridis,
 )
     # Type-stable coordinate transformation using multiple dispatch
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
@@ -254,14 +265,16 @@ function cairo_plot_polyapprox_levelset(
             append!(z_values, df_min.value)
             finite_z = filter(isfinite, z_values)
             if isempty(finite_z)
-                error("No finite z-values among critical points — cannot determine contour z_limits")
+                error(
+                    "No finite z-values among critical points — cannot determine contour z_limits",
+                )
             end
             z_limits = (minimum(finite_z), maximum(finite_z))
         end
 
         # Calculate levels (must be finite and sorted for Makie contourf)
         levels = if chebyshev_levels
-            k = collect(0:(num_levels - 1))
+            k = collect(0:(num_levels-1))
             cheb_nodes = -cos.((2k .+ 1) .* π ./ (2 * num_levels))
             z_min, z_max = z_limits
             lvls = (z_max - z_min) ./ 2 .* cheb_nodes .+ (z_max + z_min) ./ 2
@@ -285,7 +298,14 @@ function cairo_plot_polyapprox_levelset(
 
         # Create contour plot
         chosen_colormap = colormap
-        CairoMakie.contourf!(ax, x_unique, y_unique, Z, colormap = chosen_colormap, levels = levels)
+        CairoMakie.contourf!(
+            ax,
+            x_unique,
+            y_unique,
+            Z,
+            colormap = chosen_colormap,
+            levels = levels,
+        )
 
         # Initialize empty array for legend entries
         legend_entries = []
@@ -303,7 +323,7 @@ function cairo_plot_polyapprox_levelset(
                     color = :white,
                     strokecolor = :black,
                     strokewidth = 1,
-                    label = "Far"
+                    label = "Far",
                 )
                 push!(legend_entries, "Far")
             end
@@ -319,7 +339,7 @@ function cairo_plot_polyapprox_levelset(
                     color = :green,
                     strokecolor = :black,
                     strokewidth = 1,
-                    label = "Near"
+                    label = "Near",
                 )
                 push!(legend_entries, "Near")
             end
@@ -331,7 +351,7 @@ function cairo_plot_polyapprox_levelset(
                 df.x2,
                 markersize = 2,
                 color = :orange,
-                label = "All points"
+                label = "All points",
             )
             push!(legend_entries, "All points")
         end
@@ -349,7 +369,7 @@ function cairo_plot_polyapprox_levelset(
                     markersize = 15,
                     marker = :diamond,
                     color = :red,
-                    label = "Uncaptured"
+                    label = "Uncaptured",
                 )
                 push!(legend_entries, "Uncaptured")
             end
@@ -363,7 +383,7 @@ function cairo_plot_polyapprox_levelset(
                     markersize = 15,
                     marker = :diamond,
                     color = :blue,
-                    label = "Captured"
+                    label = "Captured",
                 )
                 push!(legend_entries, "Captured")
             end
@@ -382,15 +402,15 @@ function plot_filtered_y_distances(
         Int,
         NamedTuple{
             (:df, :df_min, :convergence_stats, :discrete_l2),
-            Tuple{DataFrame, DataFrame, NamedTuple, Float64}
-        }
+            Tuple{DataFrame,DataFrame,NamedTuple,Float64},
+        },
     },
     start_degree::Int,
     end_degree::Int,
     step::Int = 1;
     use_optimized::Bool = true,
     show_legend::Bool = true,
-    fig_size::Tuple{Int,Int} = (600, 400)
+    fig_size::Tuple{Int,Int} = (600, 400),
 )
     # Filter to only include degrees that succeeded
     all_degrees = start_degree:step:end_degree
@@ -453,15 +473,15 @@ function plot_filtered_y_distances(
     overall_avg::Float64 = sum(avg_distances) / length(avg_distances)
 
     _green = "\e[32m"
-    _bold  = "\e[1m"
+    _bold = "\e[1m"
     _reset = "\e[0m"
 
     println("\n$(_green)▶ $(_reset)Distance Statistics:")
     println(
-        "   $(_bold)Overall maximum distance:$(_reset) $(round(maximum(max_distances), digits=6))"
+        "   $(_bold)Overall maximum distance:$(_reset) $(round(maximum(max_distances), digits=6))",
     )
     println(
-        "   $(_bold)Overall minimum distance:$(_reset) $(round(minimum(min_distances), digits=6))"
+        "   $(_bold)Overall minimum distance:$(_reset) $(round(minimum(min_distances), digits=6))",
     )
     println("   $(_bold)Overall average distance:$(_reset) $(round(overall_avg, digits=6))")
 
@@ -481,7 +501,7 @@ function plot_filtered_y_distances(
         fig[1, 1],
         # title="Distance from Each $point_label Point to Nearest Initial Point",
         xlabel = "Degree",
-        ylabel = ""
+        ylabel = "",
     )
 
     scatterlines!(ax, degrees, max_distances, label = "Maximum", color = :red)
@@ -496,9 +516,9 @@ end
 Plot the outputs of`analyze_converged_points` function.
 """
 function plot_distance_statistics(
-    stats::Dict{String, Any};
+    stats::Dict{String,Any};
     show_legend::Bool = true,
-    fig_size::Tuple{Int,Int} = (700, 500)
+    fig_size::Tuple{Int,Int} = (700, 500),
 )
     fig = Figure(size = fig_size, fontsize = 14)
 
@@ -512,29 +532,33 @@ function plot_distance_statistics(
         ygridvisible = true,
         xgridstyle = :dash,
         ygridstyle = :dash,
-        xticks = degrees
+        xticks = degrees,
     )
 
     # Plot maximum and average distances
-    scatterlines!(ax, degrees, stats["max_distances"],
+    scatterlines!(
+        ax,
+        degrees,
+        stats["max_distances"],
         label = "Maximum",
         color = :crimson,
         markersize = 10,
-        linewidth = 2.5
+        linewidth = 2.5,
     )
-    scatterlines!(ax, degrees, stats["avg_distances"],
+    scatterlines!(
+        ax,
+        degrees,
+        stats["avg_distances"],
         label = "Average",
         color = :steelblue,
         markersize = 10,
-        linewidth = 2.5
+        linewidth = 2.5,
     )
 
     axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end
-
-
 
 function plot_convergence_captured(
     results,
@@ -543,7 +567,7 @@ function plot_convergence_captured(
     end_degree::Int,
     step::Int;
     show_legend::Bool = true,
-    fig_size::Tuple{Int,Int} = (600, 400)
+    fig_size::Tuple{Int,Int} = (600, 400),
 )
     # Filter to only include degrees that succeeded
     all_degrees = start_degree:step:end_degree
@@ -571,7 +595,7 @@ function plot_convergence_captured(
         fig[1, 1],
         # title="",
         xlabel = "Degree",
-        ylabel = ""
+        ylabel = "",
     )
 
     scatterlines!(ax, degrees, max_distances, label = "Maximum", color = :red)
@@ -581,8 +605,6 @@ function plot_convergence_captured(
 
     return fig
 end
-
-
 
 """
 Plot distance from theoretical minimizers to nearest computed critical points.
@@ -608,7 +630,7 @@ function plot_theoretical_minimizer_distances(
     end_degree::Int,
     step::Int = 1;
     show_legend::Bool = true,
-    fig_size::Tuple{Int,Int} = (700, 500)
+    fig_size::Tuple{Int,Int} = (700, 500),
 )
     # Filter to only include degrees that succeeded
     all_degrees = start_degree:step:end_degree
@@ -659,20 +681,26 @@ function plot_theoretical_minimizer_distances(
         ygridvisible = true,
         xgridstyle = :dash,
         ygridstyle = :dash,
-        xticks = degrees
+        xticks = degrees,
     )
 
-    scatterlines!(ax, degrees, avg_distances,
+    scatterlines!(
+        ax,
+        degrees,
+        avg_distances,
         label = "Average",
         color = :steelblue,
         markersize = 10,
-        linewidth = 2.5
+        linewidth = 2.5,
     )
-    scatterlines!(ax, degrees, max_distances,
+    scatterlines!(
+        ax,
+        degrees,
+        max_distances,
         label = "Maximum",
         color = :crimson,
         markersize = 10,
-        linewidth = 2.5
+        linewidth = 2.5,
     )
 
     axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
@@ -699,27 +727,29 @@ Plot L2 approximation error vs polynomial degree with individual trial paths.
 # Returns
 - `Figure`: Makie figure object
 """
-function plot_l2_convergence_trials(df::DataFrame;
-    domain_filter::Union{Nothing, Float64}=nothing,
-    title::String="L2 Approximation Error by Degree",
-    fig_size::Tuple{Int,Int}=(800, 500),
-    show_median::Bool=true,
-    trial_alpha::Float64=0.3,
-    colors=(Makie.wong_colors()[1], Makie.wong_colors()[2])
+function plot_l2_convergence_trials(
+    df::DataFrame;
+    domain_filter::Union{Nothing,Float64} = nothing,
+    title::String = "L2 Approximation Error by Degree",
+    fig_size::Tuple{Int,Int} = (800, 500),
+    show_median::Bool = true,
+    trial_alpha::Float64 = 0.3,
+    colors = (Makie.wong_colors()[1], Makie.wong_colors()[2]),
 )
     # Filter by domain if specified
     data = isnothing(domain_filter) ? df : filter(r -> r.domain == domain_filter, df)
 
-    fig = Figure(size=fig_size, fontsize=14)
-    ax = Axis(fig[1, 1],
-        title=title,
-        xlabel="Polynomial Degree",
-        ylabel="L2 Error",
-        yscale=log10,
-        xgridvisible=true,
-        ygridvisible=true,
-        xgridstyle=:dash,
-        ygridstyle=:dash
+    fig = Figure(size = fig_size, fontsize = 14)
+    ax = Axis(
+        fig[1, 1],
+        title = title,
+        xlabel = "Polynomial Degree",
+        ylabel = "L2 Error",
+        yscale = log10,
+        xgridvisible = true,
+        ygridvisible = true,
+        xgridstyle = :dash,
+        ygridstyle = :dash,
     )
 
     method_colors = Dict("standard" => colors[1], "log" => colors[2])
@@ -735,26 +765,33 @@ function plot_l2_convergence_trials(df::DataFrame;
         for seed in seeds
             trial = filter(r -> r.seed == seed, method_data)
             sort!(trial, :degree)
-            lines!(ax, trial.degree, trial.l2_error,
-                color=(color, trial_alpha),
-                linewidth=1.5
+            lines!(
+                ax,
+                trial.degree,
+                trial.l2_error,
+                color = (color, trial_alpha),
+                linewidth = 1.5,
             )
         end
 
         # Median line per method
         if show_median
             degrees = sort(unique(method_data.degree))
-            medians = [median(filter(r -> r.degree == d, method_data).l2_error) for d in degrees]
-            scatterlines!(ax, degrees, medians,
-                color=color,
-                linewidth=3,
-                markersize=10,
-                label=method
+            medians =
+                [median(filter(r -> r.degree == d, method_data).l2_error) for d in degrees]
+            scatterlines!(
+                ax,
+                degrees,
+                medians,
+                color = color,
+                linewidth = 3,
+                markersize = 10,
+                label = method,
             )
         end
     end
 
-    axislegend(ax, position=:rt, framevisible=true, bgcolor=(:white, 0.9))
+    axislegend(ax, position = :rt, framevisible = true, bgcolor = (:white, 0.9))
 
     return fig
 end

@@ -37,11 +37,11 @@ Identify points in the grid that are close to the specified level.
 - `LevelSetData{T}`: Container with filtered points and values
 """
 function prepare_level_set_data(
-    grid::Array{SVector{3, T}, 3},
+    grid::Array{SVector{3,T},3},
     values::Array{T},
     level::T;
-    tolerance::T = T(0.01)
-) where {T <: AbstractFloat}
+    tolerance::T = T(0.01),
+) where {T<:AbstractFloat}
     size(grid) == size(values) ||
         throw(DimensionMismatch("Grid and values must have same dimensions"))
     tolerance > zero(T) || throw(ArgumentError("Tolerance must be positive"))
@@ -65,7 +65,7 @@ Named tuple with:
 - `values`: vector of function values
 - `xyz`: tuple of (x, y, z) coordinate vectors
 """
-function to_makie_format(level_set::LevelSetData{T}) where {T <: AbstractFloat}
+function to_makie_format(level_set::LevelSetData{T}) where {T<:AbstractFloat}
     isempty(level_set.points) &&
         return (points = Matrix{T}(undef, 3, 0), values = T[], xyz = (T[], T[], T[]))
 
@@ -73,7 +73,7 @@ function to_makie_format(level_set::LevelSetData{T}) where {T <: AbstractFloat}
     return (
         points = points,
         values = level_set.values,
-        xyz = (view(points, 1, :), view(points, 2, :), view(points, 3, :))
+        xyz = (view(points, 1, :), view(points, 2, :), view(points, 3, :)),
     )
 end
 
@@ -100,7 +100,7 @@ function plot_level_set(
     formatted_data;
     fig_size = (800, 600),
     marker_size = 4,
-    title = "Level Set Visualization"
+    title = "Level Set Visualization",
 )
     fig = Figure(size = fig_size)
     ax = Axis3(fig[1, 1], title = title, xlabel = "x₁", ylabel = "x₂", zlabel = "x₃")
@@ -151,11 +151,11 @@ fig = create_level_set_visualization(f, grid, nothing, (0.0, 3.0))
 """
 function create_level_set_visualization(
     f,
-    grid::Array{SVector{3, T}, 3},
-    df::Union{DataFrame, Nothing},
-    z_range::Tuple{T, T},
-    params::VisualizationParameters{T} = VisualizationParameters{T}()
-) where {T <: AbstractFloat}
+    grid::Array{SVector{3,T},3},
+    df::Union{DataFrame,Nothing},
+    z_range::Tuple{T,T},
+    params::VisualizationParameters{T} = VisualizationParameters{T}(),
+) where {T<:AbstractFloat}
     grid_points = vec(grid)
     valid_points = filter(p -> !any(isnan, p), grid_points)
     isempty(valid_points) && throw(ArgumentError("Grid contains no valid points"))
@@ -178,7 +178,7 @@ function create_level_set_visualization(
     Label(
         fig[3, 1],
         @lift(string("Level: ", round($(level_slider.value), digits = 3))),
-        tellwidth = false
+        tellwidth = false,
     )
 
     level_points = Observable(Point3f[])
@@ -197,7 +197,7 @@ function create_level_set_visualization(
         color = :blue,
         markersize = 6,
         alpha = 0.7,
-        label = "Level Set"
+        label = "Level Set",
     )
 
     if !isnothing(df)
@@ -207,18 +207,18 @@ function create_level_set_visualization(
             color = :darkorange,
             marker = :diamond,
             markersize = 30,
-            label = "Data Points"
+            label = "Data Points",
         )
     end
 
-    function update_visualization(level::T) where {T <: AbstractFloat}
+    function update_visualization(level::T) where {T<:AbstractFloat}
         try
             # Update level set points
             level_data = prepare_level_set_data(
                 grid,
                 values,
                 level,
-                tolerance = params.point_tolerance
+                tolerance = params.point_tolerance,
             )
 
             formatted_data = to_makie_format(level_data)
@@ -300,14 +300,14 @@ fig = create_level_set_animation(
 """
 function create_level_set_animation(
     f,
-    grid::Array{SVector{3, T}, 3},
-    df::Union{DataFrame, Nothing},
-    z_range::Tuple{T, T},
+    grid::Array{SVector{3,T},3},
+    df::Union{DataFrame,Nothing},
+    z_range::Tuple{T,T},
     params::VisualizationParameters{T} = VisualizationParameters{T}();
     fps::Int = 30,
     duration::Int = 20,
-    output_file::String = "level_set_animation.mp4"
-) where {T <: AbstractFloat}
+    output_file::String = "level_set_animation.mp4",
+) where {T<:AbstractFloat}
     grid_points = vec(grid)
     valid_points = filter(p -> !any(isnan, p), grid_points)
 
@@ -319,7 +319,7 @@ function create_level_set_animation(
         title = "Level Set Visualization",
         xlabel = "x₁",
         ylabel = "x₂",
-        zlabel = "x₃"
+        zlabel = "x₃",
     )
 
     # Set up initial ranges and limits
@@ -347,11 +347,11 @@ function create_level_set_animation(
             color = :darkorange,
             marker = :diamond,
             markersize = 20,
-            label = "Data Points"
+            label = "Data Points",
         )
     end
 
-    function update_visualization(level::T) where {T <: AbstractFloat}
+    function update_visualization(level::T) where {T<:AbstractFloat}
         level_data =
             prepare_level_set_data(grid, values, level, tolerance = params.point_tolerance)
 
@@ -427,11 +427,11 @@ Same as the `f`-based overload, but skips function evaluation — uses the provi
 """
 function create_level_set_visualization(
     values::Array{T},
-    grid::Array{SVector{3, T}, 3},
-    df::Union{DataFrame, Nothing},
-    z_range::Tuple{T, T},
-    params::VisualizationParameters{T} = VisualizationParameters{T}()
-) where {T <: AbstractFloat}
+    grid::Array{SVector{3,T},3},
+    df::Union{DataFrame,Nothing},
+    z_range::Tuple{T,T},
+    params::VisualizationParameters{T} = VisualizationParameters{T}(),
+) where {T<:AbstractFloat}
     size(grid) == size(values) ||
         throw(DimensionMismatch("Grid shape $(size(grid)) != values shape $(size(values))"))
 
@@ -457,7 +457,7 @@ function create_level_set_visualization(
     Label(
         fig[3, 1],
         @lift(string("Level: ", round($(level_slider.value), digits = 3))),
-        tellwidth = false
+        tellwidth = false,
     )
 
     level_points = Observable(Point3f[])
@@ -469,7 +469,7 @@ function create_level_set_visualization(
         color = :blue,
         markersize = 6,
         alpha = 0.7,
-        label = "Level Set"
+        label = "Level Set",
     )
 
     if !isnothing(df)
@@ -479,17 +479,17 @@ function create_level_set_visualization(
             color = :darkorange,
             marker = :diamond,
             markersize = 30,
-            label = "Data Points"
+            label = "Data Points",
         )
     end
 
-    function update_visualization(level::T) where {T <: AbstractFloat}
+    function update_visualization(level::T) where {T<:AbstractFloat}
         try
             level_data = prepare_level_set_data(
                 grid,
                 values,
                 level,
-                tolerance = params.point_tolerance
+                tolerance = params.point_tolerance,
             )
 
             formatted_data = to_makie_format(level_data)
@@ -549,14 +549,14 @@ Same as the `f`-based overload, but skips function evaluation — uses the provi
 """
 function create_level_set_animation(
     values::Array{T},
-    grid::Array{SVector{3, T}, 3},
-    df::Union{DataFrame, Nothing},
-    z_range::Tuple{T, T},
+    grid::Array{SVector{3,T},3},
+    df::Union{DataFrame,Nothing},
+    z_range::Tuple{T,T},
     params::VisualizationParameters{T} = VisualizationParameters{T}();
     fps::Int = 30,
     duration::Int = 20,
-    output_file::String = "level_set_animation.mp4"
-) where {T <: AbstractFloat}
+    output_file::String = "level_set_animation.mp4",
+) where {T<:AbstractFloat}
     size(grid) == size(values) ||
         throw(DimensionMismatch("Grid shape $(size(grid)) != values shape $(size(values))"))
 
@@ -571,7 +571,7 @@ function create_level_set_animation(
         title = "Level Set Visualization",
         xlabel = "x₁",
         ylabel = "x₂",
-        zlabel = "x₃"
+        zlabel = "x₃",
     )
 
     # Set up initial ranges and limits
@@ -592,11 +592,11 @@ function create_level_set_animation(
             color = :darkorange,
             marker = :diamond,
             markersize = 20,
-            label = "Data Points"
+            label = "Data Points",
         )
     end
 
-    function update_visualization(level::T) where {T <: AbstractFloat}
+    function update_visualization(level::T) where {T<:AbstractFloat}
         level_data =
             prepare_level_set_data(grid, values, level, tolerance = params.point_tolerance)
 

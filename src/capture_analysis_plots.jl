@@ -56,13 +56,21 @@ function _adaptive_spacing(positions::AbstractVector{<:Real})
     if n <= 1
         # Single position: derive scale from the position value itself
         scale = n == 1 ? max(abs(sorted[1]) * 0.1, 1.0) : 1.0
-        return (min_gap = scale, fill_width = scale * 0.8,
-                jitter_scale = scale * 0.08, label_offset = scale * 0.5)
+        return (
+            min_gap = scale,
+            fill_width = scale * 0.8,
+            jitter_scale = scale * 0.08,
+            label_offset = scale * 0.5,
+        )
     end
     min_gap = minimum(diff(sorted))
     fill = min_gap * 0.8
-    return (min_gap = min_gap, fill_width = fill,
-            jitter_scale = fill * 0.1, label_offset = min_gap * 0.4)
+    return (
+        min_gap = min_gap,
+        fill_width = fill,
+        jitter_scale = fill * 0.1,
+        label_offset = min_gap * 0.4,
+    )
 end
 
 """
@@ -107,15 +115,19 @@ function _variant_color_palette(n_variants::Int; alpha::Float64 = 0.7)
     end
     # Sample from 40%-95% of YlOrRd to get visible warm tones (skip the pale end)
     n_sparse = n_variants - 1
-    sparse_colors = [colorant"#feb24c", colorant"#fd8d3c", colorant"#f03b20", colorant"#bd0026",
-                     colorant"#800026"]
+    sparse_colors = [
+        colorant"#feb24c",
+        colorant"#fd8d3c",
+        colorant"#f03b20",
+        colorant"#bd0026",
+        colorant"#800026",
+    ]
     palette = if n_sparse <= length(sparse_colors)
         [_to_rgbaf(c, alpha) for c in sparse_colors[1:n_sparse]]
     else
         # Fall back to sampling a gradient for many variants
         cmap = cgrad(:YlOrRd)
-        [_to_rgbaf(cmap[0.4 + 0.55 * (i - 1) / max(n_sparse - 1, 1)], alpha)
-         for i in 1:n_sparse]
+        [_to_rgbaf(cmap[0.4+0.55*(i-1)/max(n_sparse - 1, 1)], alpha) for i in 1:n_sparse]
     end
     return RGBAf[full_color; palette...]
 end
@@ -123,7 +135,7 @@ end
 """
 Standard legend styling kwargs.
 """
-function _legend_kwargs(; labelsize=10, titlesize=11)
+function _legend_kwargs(; labelsize = 10, titlesize = 11)
     return (;
         framevisible = true,
         backgroundcolor = (:white, 0.9),
@@ -194,13 +206,13 @@ display(fig)
 ```
 """
 function plot_capture_convergence(
-    degree_capture_results::Vector{Tuple{Int, CaptureResult}},
+    degree_capture_results::Vector{Tuple{Int,CaptureResult}},
     known::KnownCriticalPoints;
     fig_size::Tuple{Int,Int} = (900, 900),
-    l2_errors::Union{Nothing, Vector{Tuple{Int, Float64}}} = nothing,
+    l2_errors::Union{Nothing,Vector{Tuple{Int,Float64}}} = nothing,
     show_l2::Bool = false,
-    support_sizes::Union{Nothing, Dict{Int, Int}} = nothing,
-    save_path::Union{String, Nothing} = nothing,
+    support_sizes::Union{Nothing,Dict{Int,Int}} = nothing,
+    save_path::Union{String,Nothing} = nothing,
 )
     isempty(degree_capture_results) && error("degree_capture_results must be non-empty")
 
@@ -211,8 +223,10 @@ function plot_capture_convergence(
     n_tols = length(ref_cr.tolerance_fractions)
     for (deg, cr) in degree_capture_results
         if cr.tolerance_fractions != ref_cr.tolerance_fractions
-            error("All CaptureResults must use the same tolerance_fractions. " *
-                  "Degree $deg has $(cr.tolerance_fractions), expected $(ref_cr.tolerance_fractions)")
+            error(
+                "All CaptureResults must use the same tolerance_fractions. " *
+                "Degree $deg has $(cr.tolerance_fractions), expected $(ref_cr.tolerance_fractions)",
+            )
         end
     end
 
@@ -244,7 +258,7 @@ function plot_capture_convergence(
     n_other_panels = has_l2 ? 1 : 0
     auto_height = n_types * 200 + n_other_panels * 250
     actual_size = (fig_size[1], max(fig_size[2], auto_height))
-    fig = Figure(size=actual_size, fontsize=13)
+    fig = Figure(size = actual_size, fontsize = 13)
 
     # Deterministic jitter RNG (reproducible scatter positions)
     jitter_rng = MersenneTwister(42)
@@ -253,7 +267,7 @@ function plot_capture_convergence(
     panel1_gl = fig[1, 1] = GridLayout()
 
     # Build per-type distance data: type -> (positions, values)
-    type_data = Dict{Symbol, Tuple{Vector{Float64}, Vector{Float64}}}()
+    type_data = Dict{Symbol,Tuple{Vector{Float64},Vector{Float64}}}()
     for cp_type in all_types
         type_data[cp_type] = (Float64[], Float64[])
     end
@@ -278,7 +292,8 @@ function plot_capture_convergence(
         type_label = _CP_PLURAL_LABELS[cp_type]
         type_color = CP_TYPE_TABLE[cp_type].color
 
-        ax = Axis(panel1_gl[ti, 1];
+        ax = Axis(
+            panel1_gl[ti, 1];
             ylabel = "Distance to nearest CP",
             yscale = log10,
             xgridvisible = true,
@@ -293,7 +308,10 @@ function plot_capture_convergence(
         push!(panel1_axes, ax)
 
         # Annotate type in top-left corner of each sub-axis
-        text!(ax, Point2f(0.02, 0.95), text = "$type_label ($type_count)";
+        text!(
+            ax,
+            Point2f(0.02, 0.95),
+            text = "$type_label ($type_count)";
             fontsize = 10,
             color = type_color,
             align = (:left, :top),
@@ -302,7 +320,10 @@ function plot_capture_convergence(
 
         positions, values = type_data[cp_type]
         if !isempty(positions)
-            boxplot!(ax, positions, values;
+            boxplot!(
+                ax,
+                positions,
+                values;
                 color = type_color,
                 width = spacing.fill_width,
                 whiskerwidth = 0.5,
@@ -312,7 +333,10 @@ function plot_capture_convergence(
 
             # Jittered scatter overlay
             jittered_x = [p + spacing.jitter_scale * randn(jitter_rng) for p in positions]
-            scatter!(ax, jittered_x, values;
+            scatter!(
+                ax,
+                jittered_x,
+                values;
                 color = (type_color, 0.3),
                 markersize = 2,
                 strokewidth = 0,
@@ -326,7 +350,9 @@ function plot_capture_convergence(
             hlines!(ax, [tol_abs]; linestyle = :dash, color = lc, linewidth = 0.8)
             # Label only on last (bottom) sub-axis to avoid clutter
             if is_last
-                text!(ax, @sprintf("%.1f%%", 100 * tf);
+                text!(
+                    ax,
+                    @sprintf("%.1f%%", 100 * tf);
                     position = (Float64(x_positions[end]) + spacing.label_offset, tol_abs),
                     fontsize = 9,
                     color = lc,
@@ -346,10 +372,16 @@ function plot_capture_convergence(
     end
 
     # Legend for Panel 1
-    legend_elements = [MarkerElement(; color = CP_TYPE_TABLE[t].color, marker = CP_TYPE_TABLE[t].marker, markersize = 12)
-                       for t in all_types]
-    legend_labels = [_CP_PLURAL_LABELS[t] * " ($(count(x -> x == t, known.types)))" for t in all_types]
-    Legend(fig[1, 2], legend_elements, legend_labels; _legend_kwargs(; labelsize=11)...)
+    legend_elements = [
+        MarkerElement(;
+            color = CP_TYPE_TABLE[t].color,
+            marker = CP_TYPE_TABLE[t].marker,
+            markersize = 12,
+        ) for t in all_types
+    ]
+    legend_labels =
+        [_CP_PLURAL_LABELS[t] * " ($(count(x -> x == t, known.types)))" for t in all_types]
+    Legend(fig[1, 2], legend_elements, legend_labels; _legend_kwargs(; labelsize = 11)...)
 
     # --- Panel 2 (mothballed): Capture Rate Bars --------------------------------
     # Capture rate bars are redundant with the distance distribution boxplots
@@ -406,7 +438,8 @@ function plot_capture_convergence(
         end
         l2_vals = [v for (_, v) in l2_errors]
 
-        ax3 = Axis(fig[2, 1];
+        ax3 = Axis(
+            fig[2, 1];
             xlabel = x_label,
             ylabel = "L2 Error",
             yscale = log10,
@@ -417,7 +450,10 @@ function plot_capture_convergence(
             title = "Polynomial Approximation Error",
         )
 
-        scatterlines!(ax3, l2_x, l2_vals;
+        scatterlines!(
+            ax3,
+            l2_x,
+            l2_vals;
             color = :darkorange,
             markersize = 8,
             linewidth = 2.5,
@@ -484,7 +520,7 @@ function plot_capture_sparsification_combined(
     entries::Vector{<:NamedTuple},
     known::KnownCriticalPoints;
     fig_size::Tuple{Int,Int} = (1400, 700),
-    save_path::Union{String, Nothing} = nothing,
+    save_path::Union{String,Nothing} = nothing,
 )
     isempty(entries) && error("entries must be non-empty")
 
@@ -509,9 +545,11 @@ function plot_capture_sparsification_combined(
     ref_tol_fracs = ref_cr.tolerance_fractions
     for e in entries
         if e.capture_result.tolerance_fractions != ref_tol_fracs
-            error("All CaptureResults must use the same tolerance_fractions. " *
-                  "Entry (degree=$(e.degree), variant=$(e.variant_label)) has " *
-                  "$(e.capture_result.tolerance_fractions), expected $(ref_tol_fracs)")
+            error(
+                "All CaptureResults must use the same tolerance_fractions. " *
+                "Entry (degree=$(e.degree), variant=$(e.variant_label)) has " *
+                "$(e.capture_result.tolerance_fractions), expected $(ref_tol_fracs)",
+            )
         end
     end
 
@@ -527,8 +565,9 @@ function plot_capture_sparsification_combined(
     x_label = "Support Size (nonzero coefficients)"
 
     # Map each entry to its rank position
-    entry_to_xpos = Dict((e.degree, e.variant_label) => support_to_rank[e.n_nonzero_coeffs]
-                         for e in entries)
+    entry_to_xpos = Dict(
+        (e.degree, e.variant_label) => support_to_rank[e.n_nonzero_coeffs] for e in entries
+    )
 
     # Spacing from rank positions (uniform: 1, 2, 3, ...)
     rank_positions = collect(1:length(all_support_sizes))
@@ -547,7 +586,7 @@ function plot_capture_sparsification_combined(
     # Panel B is a single Axis for solve time bars.
     # A shared legend sits at the far right.
 
-    fig = Figure(size=fig_size, fontsize=13)
+    fig = Figure(size = fig_size, fontsize = 13)
 
     # Main grid: [panelA_gl | panelB_ax | legend]
     panel_a_gl = fig[1, 1] = GridLayout()
@@ -566,7 +605,8 @@ function plot_capture_sparsification_combined(
         type_label = _CP_PLURAL_LABELS[cp_type]
         type_color = CP_TYPE_TABLE[cp_type].color
 
-        ax = Axis(panel_a_gl[ti, 1];
+        ax = Axis(
+            panel_a_gl[ti, 1];
             ylabel = "Distance to nearest CP",
             yscale = log10,
             xgridvisible = true,
@@ -582,7 +622,10 @@ function plot_capture_sparsification_combined(
         push!(panel_a_axes, ax)
 
         # Type annotation in top-right corner (avoids overlap with boxplots)
-        text!(ax, Point2f(0.98, 0.95), text = "$type_label ($type_count)";
+        text!(
+            ax,
+            Point2f(0.98, 0.95),
+            text = "$type_label ($type_count)";
             fontsize = 11,
             color = type_color,
             align = (:right, :top),
@@ -613,7 +656,10 @@ function plot_capture_sparsification_combined(
                 end
 
                 if !isempty(positions)
-                    boxplot!(ax, positions, values;
+                    boxplot!(
+                        ax,
+                        positions,
+                        values;
                         color = vcolor,
                         width = box_width,
                         whiskerwidth = 0.5,
@@ -622,8 +668,12 @@ function plot_capture_sparsification_combined(
                     )
 
                     scatter_color = RGBAf(vcolor.r, vcolor.g, vcolor.b, 0.25f0)
-                    jittered_x = [p + spacing.jitter_scale * randn(jitter_rng) for p in positions]
-                    scatter!(ax, jittered_x, values;
+                    jittered_x =
+                        [p + spacing.jitter_scale * randn(jitter_rng) for p in positions]
+                    scatter!(
+                        ax,
+                        jittered_x,
+                        values;
                         color = scatter_color,
                         markersize = 2,
                         strokewidth = 0,
@@ -639,8 +689,13 @@ function plot_capture_sparsification_combined(
             lc = i <= length(tol_line_colors) ? tol_line_colors[i] : :gray50
             hlines!(ax, [tol_abs]; linestyle = :dash, color = lc, linewidth = 0.8)
             if is_last
-                text!(ax, @sprintf("%.1f%%", 100 * tf);
-                    position = (Float64(rank_positions[end]) + spacing.label_offset, tol_abs),
+                text!(
+                    ax,
+                    @sprintf("%.1f%%", 100 * tf);
+                    position = (
+                        Float64(rank_positions[end]) + spacing.label_offset,
+                        tol_abs,
+                    ),
                     fontsize = 9,
                     color = lc,
                     align = (:left, :center),
@@ -663,7 +718,8 @@ function plot_capture_sparsification_combined(
 
     bar_w = spacing.fill_width * 0.9
 
-    ax_time = Axis(fig[1, 2];
+    ax_time = Axis(
+        fig[1, 2];
         xlabel = x_label,
         ylabel = "HC Solve Time (s)",
         xgridvisible = false,
@@ -684,10 +740,7 @@ function plot_capture_sparsification_combined(
         push!(bar_colors, variant_colors[variant_idx])
     end
 
-    barplot!(ax_time, bar_positions, bar_values;
-        color = bar_colors,
-        width = bar_w,
-    )
+    barplot!(ax_time, bar_positions, bar_values; color = bar_colors, width = bar_w)
 
     ax_time.xticks = x_ticks
 
@@ -705,7 +758,9 @@ function plot_capture_sparsification_combined(
                 bar_x = Float64(entry_to_xpos[(deg, vlabel)])
                 bar_top = e.solve_time
                 time_saved = full_time - e.solve_time
-                text!(ax_time, _fmt_saved(time_saved);
+                text!(
+                    ax_time,
+                    _fmt_saved(time_saved);
                     position = (bar_x, bar_top),
                     fontsize = 9,
                     align = (:center, :bottom),
@@ -732,11 +787,23 @@ function plot_capture_sparsification_combined(
         end
     end
 
-    legend_elements = [PolyElement(; color=RGBAf(variant_colors[i].r, variant_colors[i].g,
-                                                  variant_colors[i].b, 1.0f0))
-                       for i in 1:n_variants]
-    Legend(fig[1, 3], legend_elements, legend_labels;
-        title = "Variant", _legend_kwargs()...)
+    legend_elements = [
+        PolyElement(;
+            color = RGBAf(
+                variant_colors[i].r,
+                variant_colors[i].g,
+                variant_colors[i].b,
+                1.0f0,
+            ),
+        ) for i in 1:n_variants
+    ]
+    Legend(
+        fig[1, 3],
+        legend_elements,
+        legend_labels;
+        title = "Variant",
+        _legend_kwargs()...,
+    )
 
     # --- Layout sizing --------------------------------------------------------
 
