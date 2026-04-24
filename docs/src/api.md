@@ -60,7 +60,8 @@ Functions for visualizing adaptive subdivision experiments.
 - `SubdivisionPartitionStyle` - Style configuration for partition plots
 
 ### Level Set Overlay
-- `plot_subdivision_on_levelset` - Objective function contours with subdivision boundaries and CPs overlaid
+- `plot_subdivision_on_levelset` - Objective function contours with subdivision boundaries and CPs overlaid (tree-based; runtime only)
+- `plot_subdivision_on_levelset_from_bounds` - Same plot built from serialized leaf bounds + L2 errors (works from JSON results, no tree needed)
 
 ### Error Heatmap
 - `plot_subdivision_error_heatmap` - Per-cell polynomial approximation error on a fine grid

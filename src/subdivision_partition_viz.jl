@@ -901,7 +901,7 @@ function plot_subdivision_on_levelset(
 end
 
 """
-    plot_subdivision_on_levelset(f, bounds; leaf_bounds, leaf_l2_errors, kwargs...) → Figure
+    plot_subdivision_on_levelset_from_bounds(f, bounds; leaf_bounds, leaf_l2_errors, kwargs...) → Figure
 
 Data-based version for when the tree is not available but leaf geometry and
 L2 errors have been extracted (e.g. from JSON results).
@@ -914,7 +914,7 @@ L2 errors have been extracted (e.g. from JSON results).
 
 All other keyword arguments are the same as the tree-based version.
 """
-function plot_subdivision_on_levelset(
+function plot_subdivision_on_levelset_from_bounds(
     f,
     bounds::Vector;
     leaf_bounds::Vector,

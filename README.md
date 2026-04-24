@@ -106,7 +106,8 @@ fig = plot_polyapprox_levelset(polynomial_data, num_levels=20)
 
 ### Subdivision Visualization
 - `plot_subdivision_partition()` - Domain partition with convergence coloring and CPs
-- `plot_subdivision_on_levelset()` - Objective contours with subdivision overlay
+- `plot_subdivision_on_levelset()` - Objective contours with subdivision overlay (tree-based)
+- `plot_subdivision_on_levelset_from_bounds()` - Same plot from serialized leaf bounds (no tree)
 - `plot_subdivision_error_heatmap()` - Per-cell approximation error on fine grid
 - `interactive_error_explorer()` - GLMakie zoom-refine explorer
 
