@@ -100,12 +100,7 @@ function plot_error_function_1D_with_critical_points(
 
     # @info "" map(first, fine_grid) map(last, fine_grid) fine_values_f
 
-    cf = plot!(
-        ax,
-        map(first, fine_grid),
-        fine_values_f;
-        alpha=0.3
-    )
+    cf = plot!(ax, map(first, fine_grid), fine_values_f; alpha = 0.3)
     pt = scatter!(
         ax,
         map(first, p_true),
@@ -142,13 +137,15 @@ function plot_error_function_1D_with_critical_points(
         ylabel = "w_d(x)",
     )
 
-    cf = plot!(
+    cf = plot!(ax, map(first, fine_grid), fine_values_wd; alpha = 0.3)
+    cp = scatter!(
         ax,
-        map(first, fine_grid),
-        fine_values_wd;
-        alpha=0.3
+        df.x1,
+        poly_func.((x -> Vector(pullback([x]))).(df.x1)),
+        markersize = 10,
+        color = :blue,
+        marker = :diamond,
     )
-    cp = scatter!(ax, df.x1, poly_func.((x -> Vector(pullback([x]))).(df.x1)), markersize = 10, color = :blue, marker = :diamond)
     # rct = lines!(
     #     ax,
     #     [
@@ -248,7 +245,7 @@ function plot_error_function_2D_with_critical_points(
     z_limits = z_limits_f
     z_limits = (
         z_limits[1] - 0.1 * abs(z_limits[2] - z_limits[1]),
-        z_limits[2] + 0.1 * abs(z_limits[2] - z_limits[1])
+        z_limits[2] + 0.1 * abs(z_limits[2] - z_limits[1]),
     )
     @info "" z_limits
 
@@ -261,7 +258,7 @@ function plot_error_function_2D_with_critical_points(
         fig[1, 1],
         title = "$model_func, f(x) = $distance",
         xlabel = xlabel,
-        ylabel = ylabel
+        ylabel = ylabel,
     )
 
     # @info "" map(first, fine_grid) map(last, fine_grid) fine_values_f
@@ -272,7 +269,7 @@ function plot_error_function_2D_with_critical_points(
         map(last, fine_grid),
         fine_values_f;
         colormap = chosen_colormap,
-        levels = levels
+        levels = levels,
     )
 
     pts_along_valley = df[df.z .< critical_point_threshold_for_hessian, :]
@@ -313,16 +310,25 @@ function plot_error_function_2D_with_critical_points(
     #     color = :green,
     #     label = "p_true",
     # )
-    cp = scatter!(ax, df.x1, df.x2,         
-        markersize = round.(Int, 10*percent.(norm.(grad_at_cp), Ref(norm.(grad_at_cp))), RoundUp), 
+    cp = scatter!(
+        ax,
+        df.x1,
+        df.x2,
+        markersize = round.(
+            Int,
+            10*percent.(norm.(grad_at_cp), Ref(norm.(grad_at_cp))),
+            RoundUp,
+        ),
         # markersize = max.(1, round.(Int, 15*norm.(grad_at_cp) ./ maximum(norm.(grad_at_cp)))),
-        color = :blue, marker = :diamond)
+        color = :blue,
+        marker = :diamond,
+    )
 
     ax = Axis(
         fig[1, 2],
         title = "w_d(x), d = $(pol.degree)",
         xlabel = xlabel,
-        ylabel = ylabel
+        ylabel = ylabel,
     )
 
     cf = contourf!(
@@ -331,13 +337,17 @@ function plot_error_function_2D_with_critical_points(
         map(last, fine_grid),
         fine_values_wd,
         colormap = chosen_colormap,
-        levels = levels
+        levels = levels,
     )
 
     cp = scatter!(
-        ax, df.x1, df.x2, 
+        ax,
+        df.x1,
+        df.x2,
         markersize = 10,# round.(Int, 10*percent.(norm.(grad_at_cp), Ref(norm.(grad_at_cp))), RoundUp), 
-        color = :blue, marker = :diamond)
+        color = :blue,
+        marker = :diamond,
+    )
     rct = lines!(
         ax,
         [
@@ -345,36 +355,48 @@ function plot_error_function_2D_with_critical_points(
             TR.center[1] - TR.sample_range,
             TR.center[1] + TR.sample_range,
             TR.center[1] + TR.sample_range,
-            TR.center[1] - TR.sample_range
+            TR.center[1] - TR.sample_range,
         ],
         [
             TR.center[2] - TR.sample_range,
             TR.center[2] + TR.sample_range,
             TR.center[2] + TR.sample_range,
             TR.center[2] - TR.sample_range,
-            TR.center[2] - TR.sample_range
+            TR.center[2] - TR.sample_range,
         ],
         color = :black,
         linewidth = 3,
-        linestyle = :dash
+        linestyle = :dash,
     )
 
     norm_factor = arrow_norm_factor * TR.sample_range
     ar = arrows!(
-        ax, 
-        repeat([pts_along_valley.x1[i] for i in 1:length(eachrow(pts_along_valley))], 2), 
-        repeat([pts_along_valley.x2[i] for i in 1:length(eachrow(pts_along_valley))], 2), 
+        ax,
+        repeat([pts_along_valley.x1[i] for i in 1:length(eachrow(pts_along_valley))], 2),
+        repeat([pts_along_valley.x2[i] for i in 1:length(eachrow(pts_along_valley))], 2),
         vcat(
-            [eigvecs(hess_at_cp[i])[1, 1] * norm_factor for i in 1:length(eachrow(pts_along_valley))], 
-            [eigvecs(hess_at_cp[i])[2, 1] * norm_factor for i in 1:length(eachrow(pts_along_valley))]
-        ), 
+            [
+                eigvecs(hess_at_cp[i])[1, 1] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
+            [
+                eigvecs(hess_at_cp[i])[2, 1] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
+        ),
         vcat(
-            [eigvecs(hess_at_cp[i])[1, 2] * norm_factor for i in 1:length(eachrow(pts_along_valley))], 
-            [eigvecs(hess_at_cp[i])[2, 2] * norm_factor for i in 1:length(eachrow(pts_along_valley))]
+            [
+                eigvecs(hess_at_cp[i])[1, 2] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
+            [
+                eigvecs(hess_at_cp[i])[2, 2] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
         ),
         color = :red,
         alpha = 0.6,
-        linewidth=2.0,
+        linewidth = 2.0,
         # label="My Arrow"
     )
 
@@ -383,7 +405,12 @@ function plot_error_function_2D_with_critical_points(
     Legend(
         fig[2, 1],
         [cp, pt, rct, ar],
-        ["Critical Points of w_d (size is norm of Hessisan of w_d)", "True Parameter", "Sample Range", "Eigenvectors of Hessian"],
+        [
+            "Critical Points of w_d (size is norm of Hessisan of w_d)",
+            "True Parameter",
+            "Sample Range",
+            "Eigenvectors of Hessian",
+        ],
         orientation = :horizontal,  # Make legend horizontal for better space usage
         tellwidth = false,         # Don't have legend width affect layout
         tellheight = true,
@@ -404,7 +431,7 @@ function plot_error_function_2D_with_critical_points(
     plot_range,
     distance;
     figure_size = (1200, 1000),
-    kwargs...
+    kwargs...,
 )
     fig = Figure(size = figure_size)
     plot_error_function_2D_with_critical_points(
@@ -418,14 +445,14 @@ function plot_error_function_2D_with_critical_points(
         plot_range,
         distance;
         figure_size = figure_size,
-        kwargs...
+        kwargs...,
     )
     return fig
 end
 
 # Method that accepts a GridPosition or GridLayout position
 function plot_error_function_2D_with_critical_points(
-    grid_position::Union{Makie.GridPosition, Makie.GridLayout},
+    grid_position::Union{Makie.GridPosition,Makie.GridLayout},
     pol::ApproxPoly,
     TR::TestInput,
     df::DataFrame,
@@ -449,7 +476,7 @@ function plot_error_function_2D_with_critical_points(
     plot2_pos = (1, 2),
     colorbar_pos = (1, 3),
     legend_pos = (2, 1),
-    legend_span = nothing
+    legend_span = nothing,
 )
     @assert size(pol.grid, 2) == 2 "Grid must be 2D for this function"
 
@@ -486,7 +513,7 @@ function plot_error_function_2D_with_critical_points(
     z_limits = z_limits_f
     z_limits = (
         z_limits[1] - 0.1 * abs(z_limits[2] - z_limits[1]),
-        z_limits[2] + 0.1 * abs(z_limits[2] - z_limits[1])
+        z_limits[2] + 0.1 * abs(z_limits[2] - z_limits[1]),
     )
     @info "" z_limits
 
@@ -498,20 +525,21 @@ function plot_error_function_2D_with_critical_points(
         grid_position[plot1_pos...],
         title = "$model_func, f(x) = $distance",
         xlabel = xlabel,
-        ylabel = ylabel
+        ylabel = ylabel,
     )
 
     # Extract x and y coordinates
     x_coords = Float64.(plot_range[1] .+ TR.center[1])
     y_coords = Float64.(plot_range[2] .+ TR.center[2])
-    
+
     cf = contourf!(
         ax,
         x_coords,
         y_coords,
-        reshape(fine_values_f, length(plot_range[2]), length(plot_range[1]))' |> Matrix{Float64};
+        reshape(fine_values_f, length(plot_range[2]), length(plot_range[1]))' |>
+        Matrix{Float64};
         colormap = chosen_colormap,
-        levels = levels
+        levels = levels,
     )
 
     pt = scatter!(
@@ -529,16 +557,17 @@ function plot_error_function_2D_with_critical_points(
         grid_position[plot2_pos...],
         title = "w_d(x), d = $(pol.degree)",
         xlabel = xlabel,
-        ylabel = ylabel
+        ylabel = ylabel,
     )
 
     cf = contourf!(
         ax,
         x_coords,
         y_coords,
-        reshape(fine_values_wd, length(plot_range[2]), length(plot_range[1]))' |> Matrix{Float64},
+        reshape(fine_values_wd, length(plot_range[2]), length(plot_range[1]))' |>
+        Matrix{Float64},
         colormap = chosen_colormap,
-        levels = levels
+        levels = levels,
     )
     cp = scatter!(ax, df.x1, df.x2, markersize = 10, color = :blue, marker = :diamond)
     rct = lines!(
@@ -548,18 +577,18 @@ function plot_error_function_2D_with_critical_points(
             TR.center[1] - TR.sample_range,
             TR.center[1] + TR.sample_range,
             TR.center[1] + TR.sample_range,
-            TR.center[1] - TR.sample_range
+            TR.center[1] - TR.sample_range,
         ],
         [
             TR.center[2] - TR.sample_range,
             TR.center[2] + TR.sample_range,
             TR.center[2] + TR.sample_range,
             TR.center[2] - TR.sample_range,
-            TR.center[2] - TR.sample_range
+            TR.center[2] - TR.sample_range,
         ],
         color = :black,
         linewidth = 3,
-        linestyle = :dash
+        linestyle = :dash,
     )
 
     pts_along_valley = df[df.z .< critical_point_threshold_for_hessian, :]
@@ -574,16 +603,28 @@ function plot_error_function_2D_with_critical_points(
 
     norm_factor = arrow_norm_factor * TR.sample_range
     ar = arrows2d!(
-        ax, 
-        repeat([pts_along_valley.x1[i] for i in 1:length(eachrow(pts_along_valley))], 2), 
-        repeat([pts_along_valley.x2[i] for i in 1:length(eachrow(pts_along_valley))], 2), 
+        ax,
+        repeat([pts_along_valley.x1[i] for i in 1:length(eachrow(pts_along_valley))], 2),
+        repeat([pts_along_valley.x2[i] for i in 1:length(eachrow(pts_along_valley))], 2),
         vcat(
-            [eigvecs(hess_at_cp[i])[1, 1] * norm_factor for i in 1:length(eachrow(pts_along_valley))], 
-            [eigvecs(hess_at_cp[i])[2, 1] * norm_factor for i in 1:length(eachrow(pts_along_valley))]
-        ), 
+            [
+                eigvecs(hess_at_cp[i])[1, 1] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
+            [
+                eigvecs(hess_at_cp[i])[2, 1] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
+        ),
         vcat(
-            [eigvecs(hess_at_cp[i])[1, 2] * norm_factor for i in 1:length(eachrow(pts_along_valley))], 
-            [eigvecs(hess_at_cp[i])[2, 2] * norm_factor for i in 1:length(eachrow(pts_along_valley))]
+            [
+                eigvecs(hess_at_cp[i])[1, 2] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
+            [
+                eigvecs(hess_at_cp[i])[2, 2] * norm_factor for
+                i in 1:length(eachrow(pts_along_valley))
+            ],
         ),
         color = :red,
         alpha = 0.6,
@@ -594,11 +635,18 @@ function plot_error_function_2D_with_critical_points(
         Colorbar(grid_position[colorbar_pos...], cf, label = colorbar_label)
     end
 
-    legend_position = isnothing(legend_span) ? grid_position[legend_pos...] : grid_position[legend_pos[1], legend_span]
+    legend_position =
+        isnothing(legend_span) ? grid_position[legend_pos...] :
+        grid_position[legend_pos[1], legend_span]
     Legend(
         legend_position,
         [cp, pt, rct, ar],
-        ["Critical Points of w_d", "True Parameter", "Sample Range", "Eigenvectors of Hessian"],
+        [
+            "Critical Points of w_d",
+            "True Parameter",
+            "Sample Range",
+            "Eigenvectors of Hessian",
+        ],
         orientation = :horizontal,
         tellwidth = false,
         tellheight = true,
@@ -625,24 +673,27 @@ function GlobtimPlots.plot_polyapprox_3d(
     TR::AbstractProblemInput,
     df::DataFrame,
     df_min::DataFrame;
-    figure_size::Tuple{Int, Int} = (1000, 800),
-    z_limits::Union{Nothing, Tuple{Float64, Float64}} = nothing,
+    figure_size::Tuple{Int,Int} = (1000, 800),
+    z_limits::Union{Nothing,Tuple{Float64,Float64}} = nothing,
     show_captured::Bool = true,
     alpha_surface::Float64 = 0.7,
     rotate::Bool = false,
     filename::String = "function_3d_rotation.mp4",
     fade::Bool = false,
-    z_cut = 0.25
+    z_cut = 0.25,
 )
     # Delegate to the backend-agnostic implementation in GlobtimPlots
     fig = GlobtimPlots._plot_polyapprox_3d_impl(
-        pol, TR, df, df_min;
+        pol,
+        TR,
+        df,
+        df_min;
         figure_size = figure_size,
         z_limits = z_limits,
         show_captured = show_captured,
         alpha_surface = alpha_surface,
         fade = fade,
-        z_cut = z_cut
+        z_cut = z_cut,
     )
 
     if isnothing(fig)

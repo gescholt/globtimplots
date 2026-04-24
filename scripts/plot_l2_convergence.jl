@@ -14,7 +14,9 @@ using Pkg
 
 # Activate globtimplots — script is inside globtimplots/scripts/
 globtimplots_path = abspath(joinpath(@__DIR__, ".."))
-isfile(joinpath(globtimplots_path, "Project.toml")) || error("Cannot find globtimplots Project.toml at $globtimplots_path. Run this script from within the globtimplots/scripts/ directory or use --project=<globtimplots_path>.")
+isfile(joinpath(globtimplots_path, "Project.toml")) || error(
+    "Cannot find globtimplots Project.toml at $globtimplots_path. Run this script from within the globtimplots/scripts/ directory or use --project=<globtimplots_path>.",
+)
 Pkg.activate(globtimplots_path)
 
 using GlobtimPlots
@@ -49,7 +51,7 @@ println("Degrees: $(sort(unique(df.degree)))")
 println("Seeds: $(length(unique(df.seed)))")
 
 # Plot all domains combined
-fig = plot_l2_convergence_trials(df, title="L2 Convergence: Log vs Standard")
+fig = plot_l2_convergence_trials(df, title = "L2 Convergence: Log vs Standard")
 save(output_file, fig)
 println("Saved: $output_file")
 
@@ -60,9 +62,10 @@ if :domain in Symbol.(names(df))
         println("\nGenerating per-domain plots...")
         for dom in sort(domains)
             output_dom = replace(output_file, ".pdf" => "_dom$(dom).pdf")
-            fig_dom = plot_l2_convergence_trials(df,
-                domain_filter=dom,
-                title="L2 Convergence (domain=$dom)"
+            fig_dom = plot_l2_convergence_trials(
+                df,
+                domain_filter = dom,
+                title = "L2 Convergence (domain=$dom)",
             )
             save(output_dom, fig_dom)
             println("Saved: $output_dom")

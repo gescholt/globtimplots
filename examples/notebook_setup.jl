@@ -8,7 +8,8 @@ println("=" ^ 60)
 
 # Activate the GlobtimPlots project environment
 globtimplots_path = abspath(joinpath(@__DIR__, ".."))
-isfile(joinpath(globtimplots_path, "Project.toml")) || error("Cannot find GlobtimPlots Project.toml at $globtimplots_path")
+isfile(joinpath(globtimplots_path, "Project.toml")) ||
+    error("Cannot find GlobtimPlots Project.toml at $globtimplots_path")
 println("Activating GlobtimPlots environment at: ", globtimplots_path)
 Pkg.activate(globtimplots_path)
 

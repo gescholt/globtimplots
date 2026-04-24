@@ -36,8 +36,12 @@ using REPL.TerminalMenus
 Create a menu for selecting a parameter value.
 Returns the selected value (FixedValue), a range (SweepRange), or nothing for 'all'.
 """
-function select_parameter(param_name::String, available::Vector{T};
-                          context::String="", allow_range::Bool=true) where T
+function select_parameter(
+    param_name::String,
+    available::Vector{T};
+    context::String = "",
+    allow_range::Bool = true,
+) where {T}
     # Build menu options
     options = string.(available)
     if allow_range && length(available) > 1
@@ -50,7 +54,7 @@ function select_parameter(param_name::String, available::Vector{T};
     println("\nSelect $param_name$ctx_str:")
 
     # Create and run menu
-    menu = RadioMenu(options; pagesize=min(10, length(options)))
+    menu = RadioMenu(options; pagesize = min(10, length(options)))
     choice = request(menu)
 
     if choice == -1  # Cancelled
@@ -71,13 +75,13 @@ end
 """
 Prompt user to select a range from available values.
 """
-function select_range(param_name::String, available::Vector{T}) where T
+function select_range(param_name::String, available::Vector{T}) where {T}
     println("\nSelect $param_name range:")
     println("  Available: $(minimum(available)) to $(maximum(available))")
 
     # Select min
     println("Select minimum:")
-    menu_min = RadioMenu(string.(available); pagesize=min(10, length(available)))
+    menu_min = RadioMenu(string.(available); pagesize = min(10, length(available)))
     min_idx = request(menu_min)
     min_idx == -1 && error("Selection cancelled")
     min_val = available[min_idx]
@@ -85,7 +89,7 @@ function select_range(param_name::String, available::Vector{T}) where T
     # Select max (only values >= min)
     valid_max = filter(x -> x >= min_val, available)
     println("Select maximum:")
-    menu_max = RadioMenu(string.(valid_max); pagesize=min(10, length(valid_max)))
+    menu_max = RadioMenu(string.(valid_max); pagesize = min(10, length(valid_max)))
     max_idx = request(menu_max)
     max_idx == -1 && error("Selection cancelled")
     max_val = valid_max[max_idx]
@@ -96,8 +100,7 @@ end
 """
 Get available values for a parameter given current filter constraints.
 """
-function get_filtered_values(results_root::String, filter::ExperimentFilter,
-                             param::Symbol)
+function get_filtered_values(results_root::String, filter::ExperimentFilter, param::Symbol)
     df = query_to_dataframe(results_root, filter)
     if nrow(df) == 0
         # Return empty vector of appropriate type
@@ -129,9 +132,9 @@ function select_mode()
         "Standard (GN + domain → plots)",
         "Advanced (GN + domain + seed → plots)",
         "Coverage (check missing experiments)",
-        "Browse (use experiment index → plots)"
+        "Browse (use experiment index → plots)",
     ]
-    menu = RadioMenu(options; pagesize=4)
+    menu = RadioMenu(options; pagesize = 4)
     choice = request(menu)
     choice == -1 && error("Selection cancelled")
     return [:standard, :advanced, :coverage, :browse][choice]
@@ -165,26 +168,32 @@ function interactive_filter_selection(results_root::String)
 
     # Step 1: Select GN
     gn_values = sort(unique(df_all.GN))
-    gn_spec = select_parameter("GN", gn_values; allow_range=false)
+    gn_spec = select_parameter("GN", gn_values; allow_range = false)
 
     # Step 2: Select domain (filtered by GN)
-    filter_gn = ExperimentFilter(gn=gn_spec)
+    filter_gn = ExperimentFilter(gn = gn_spec)
     domain_values = get_filtered_values(results_root, filter_gn, :domain)
-    domain_spec = select_parameter("domain", domain_values;
-                                   context=build_context(filter_gn),
-                                   allow_range=true)
+    domain_spec = select_parameter(
+        "domain",
+        domain_values;
+        context = build_context(filter_gn),
+        allow_range = true,
+    )
 
     # Step 3: Select seed (advanced mode only)
     seed_spec = nothing
     if mode == :advanced
-        filter_gn_dom = ExperimentFilter(gn=gn_spec, domain=domain_spec)
+        filter_gn_dom = ExperimentFilter(gn = gn_spec, domain = domain_spec)
         seed_values = get_filtered_values(results_root, filter_gn_dom, :seed)
-        seed_spec = select_parameter("seed", seed_values;
-                                     context=build_context(filter_gn_dom),
-                                     allow_range=true)
+        seed_spec = select_parameter(
+            "seed",
+            seed_values;
+            context = build_context(filter_gn_dom),
+            allow_range = true,
+        )
     end
 
-    return ExperimentFilter(gn=gn_spec, domain=domain_spec, seed=seed_spec)
+    return ExperimentFilter(gn = gn_spec, domain = domain_spec, seed = seed_spec)
 end
 
 # =============================================================================
@@ -194,7 +203,7 @@ end
 """
 Multi-select values from a list using space to toggle.
 """
-function multi_select_values(prompt::String, values::Vector{T}) where T
+function multi_select_values(prompt::String, values::Vector{T}) where {T}
     if isempty(values)
         println("No values available")
         return T[]
@@ -205,7 +214,7 @@ function multi_select_values(prompt::String, values::Vector{T}) where T
     end
 
     options = string.(values)
-    menu = MultiSelectMenu(options; pagesize=min(10, length(options)))
+    menu = MultiSelectMenu(options; pagesize = min(10, length(options)))
     selected = request(prompt, menu)
 
     if isempty(selected)
@@ -253,19 +262,15 @@ function run_coverage_analysis(results_root::String)
     isempty(selected_gn) && error("No GN values selected")
 
     # Step 2: Multi-select domain values
-    selected_domains = multi_select_values("\nSelect expected domain values:", domain_values)
+    selected_domains =
+        multi_select_values("\nSelect expected domain values:", domain_values)
     isempty(selected_domains) && error("No domain values selected")
 
     # Step 3: Select degree range
     println("\nSelect degree range:")
     deg_min, deg_max = extrema(degree_values)
-    options = [
-        "$deg_min-$deg_max (all)",
-        "4-12",
-        "4-18",
-        "Custom"
-    ]
-    menu = RadioMenu(options; pagesize=4)
+    options = ["$deg_min-$deg_max (all)", "4-12", "4-18", "Custom"]
+    menu = RadioMenu(options; pagesize = 4)
     choice = request(menu)
     choice == -1 && error("Selection cancelled")
 
@@ -291,7 +296,7 @@ function run_coverage_analysis(results_root::String)
     # Step 4: Select seed range
     println("\nSelect seed range:")
     seed_options = ["1:5 (5 seeds)", "1:3 (3 seeds)", "1 only", "Custom"]
-    menu = RadioMenu(seed_options; pagesize=4)
+    menu = RadioMenu(seed_options; pagesize = 4)
     choice = request(menu)
     choice == -1 && error("Selection cancelled")
 
@@ -313,11 +318,12 @@ function run_coverage_analysis(results_root::String)
     end
 
     # Run analysis (no redundant summary - report will show params)
-    report = analyze_coverage(results_root;
+    report = analyze_coverage(
+        results_root;
         expected_gn = selected_gn,
         expected_domains = selected_domains,
         expected_degrees = degree_range,
-        expected_seeds = seed_range
+        expected_seeds = seed_range,
     )
 
     # Print report
@@ -327,13 +333,13 @@ function run_coverage_analysis(results_root::String)
     if !isempty(report.missing_keys)
         println("\nGenerate gap-filling configs?")
         options = ["Yes", "No"]
-        menu = RadioMenu(options; pagesize=2)
+        menu = RadioMenu(options; pagesize = 2)
         choice = request(menu)
 
         if choice == 1
             println("\nSelect output directory:")
             dir_options = ["experiments/fill_gaps/", "experiments/generated/", "Custom"]
-            menu = RadioMenu(dir_options; pagesize=3)
+            menu = RadioMenu(dir_options; pagesize = 3)
             dir_choice = request(menu)
 
             output_dir = if dir_choice == 1
@@ -345,9 +351,11 @@ function run_coverage_analysis(results_root::String)
                 strip(readline())
             end
 
-            configs = generate_gap_filling_configs(report; output_dir=output_dir)
+            configs = generate_gap_filling_configs(report; output_dir = output_dir)
             n_missing = length(report.missing_keys)
-            println("\nGenerated $(length(configs)) config files for $n_missing missing experiments.")
+            println(
+                "\nGenerated $(length(configs)) config files for $n_missing missing experiments.",
+            )
         end
     end
 
@@ -360,7 +368,9 @@ end
 
 const RESULTS_ROOT = let
     key = "GLOBTIM_RESULTS"
-    haskey(ENV, key) || error("Environment variable $key is not set. Set it to the globtim_results directory, e.g. export GLOBTIM_RESULTS=/path/to/globtim_results")
+    haskey(ENV, key) || error(
+        "Environment variable $key is not set. Set it to the globtim_results directory, e.g. export GLOBTIM_RESULTS=/path/to/globtim_results",
+    )
     joinpath(ENV[key], "lotka_volterra_4d")
 end
 
@@ -408,13 +418,14 @@ println("  Degrees: $(minimum(df.degree))-$(maximum(df.degree))")
 println("  Domains: $(format_values(sort(unique(df.domain))))")
 
 # Aggregate data for comparison plots
-df_agg = combine(groupby(df, [:GN, :domain, :degree]),
+df_agg = combine(
+    groupby(df, [:GN, :domain, :degree]),
     :L2_norm => mean => :mean_L2,
     :L2_norm => std => :std_L2,
     :recovery_error => mean => :mean_recovery,
     :recovery_error => std => :std_recovery,
     :recovery_error => (x -> mean(x .< 0.05)) => :success_rate,
-    nrow => :n_seeds
+    nrow => :n_seeds,
 )
 
 # Detect single-domain case
