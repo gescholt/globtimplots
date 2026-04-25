@@ -20,7 +20,9 @@ const SCRIPT_DIR = @__DIR__
 using Pkg
 # Activate globtimplots — script is inside globtimplots/scripts/
 const GLOBTIMPLOTS_ROOT = abspath(joinpath(SCRIPT_DIR, ".."))
-isfile(joinpath(GLOBTIMPLOTS_ROOT, "Project.toml")) || error("Cannot find globtimplots Project.toml at $GLOBTIMPLOTS_ROOT. Run this script from within globtimplots/scripts/ or use --project=<globtimplots_path>.")
+isfile(joinpath(GLOBTIMPLOTS_ROOT, "Project.toml")) || error(
+    "Cannot find globtimplots Project.toml at $GLOBTIMPLOTS_ROOT. Run this script from within globtimplots/scripts/ or use --project=<globtimplots_path>.",
+)
 Pkg.activate(GLOBTIMPLOTS_ROOT)
 
 using CairoMakie
@@ -52,7 +54,7 @@ end
 Convert orthant index to sign pattern for display.
 """
 function orthant_to_signs(orthant_idx, ndims)
-    bits = digits(orthant_idx - 1, base=2, pad=ndims)
+    bits = digits(orthant_idx - 1, base = 2, pad = ndims)
     return [b == 1 ? "+" : "-" for b in bits]
 end
 
@@ -60,16 +62,16 @@ function parse_commandline()
     s = ArgParseSettings()
     @add_arg_table! s begin
         "--experiment-dir"
-            help = "Path to subdivision experiment results"
-            arg_type = String
-            required = true
+        help = "Path to subdivision experiment results"
+        arg_type = String
+        required = true
         "--output"
-            help = "Output file path (default: orthant_analysis.pdf in experiment dir)"
-            arg_type = String
-            default = nothing
+        help = "Output file path (default: orthant_analysis.pdf in experiment dir)"
+        arg_type = String
+        default = nothing
         "--show"
-            help = "Display plot interactively"
-            action = :store_true
+        help = "Display plot interactively"
+        action = :store_true
     end
     return parse_args(s)
 end
@@ -97,7 +99,7 @@ function load_orthant_data(experiment_dir)
         p_center = Float64.(config["p_center"]),
         domain_range = config["domain_range"],
         recovery_error = result_data["recovery_error"],
-        total_critical_points = result_data["total_critical_points"]
+        total_critical_points = result_data["total_critical_points"],
     )
 end
 
@@ -117,61 +119,75 @@ function create_orthant_analysis_plot(data)
     l2_norms = [s["L2_norm"] for s in orthant_stats]
 
     # Color scheme: green = contains p_true, red = selected, blue = other
-    colors = [o == true_orthant ? :green :
-              (o == best_orthant ? :red : :steelblue)
-              for o in orthants]
+    colors = [
+        o == true_orthant ? :green : (o == best_orthant ? :red : :steelblue) for
+        o in orthants
+    ]
 
     # Create figure
-    fig = Figure(size=(1400, 500), fontsize=12)
+    fig = Figure(size = (1400, 500), fontsize = 12)
 
     # Panel 1: Critical points per orthant
-    ax1 = Axis(fig[1, 1],
-        xlabel="Orthant",
-        ylabel="Critical Points",
-        title="Critical Points per Orthant",
-        xticks=1:n_orthants
+    ax1 = Axis(
+        fig[1, 1],
+        xlabel = "Orthant",
+        ylabel = "Critical Points",
+        title = "Critical Points per Orthant",
+        xticks = 1:n_orthants,
     )
-    barplot!(ax1, orthants, cpts, color=colors)
+    barplot!(ax1, orthants, cpts, color = colors)
 
     # Panel 2: Best f(p) per orthant (log scale)
-    ax2 = Axis(fig[1, 2],
-        xlabel="Orthant",
-        ylabel="Best f(p)",
-        title="Best Polynomial Minimum per Orthant",
-        yscale=log10,
-        xticks=1:n_orthants
+    ax2 = Axis(
+        fig[1, 2],
+        xlabel = "Orthant",
+        ylabel = "Best f(p)",
+        title = "Best Polynomial Minimum per Orthant",
+        yscale = log10,
+        xticks = 1:n_orthants,
     )
-    barplot!(ax2, orthants, best_values, color=colors)
+    barplot!(ax2, orthants, best_values, color = colors)
 
     # Add horizontal line at best value
-    hlines!(ax2, [minimum(best_values)], color=:black, linestyle=:dash, linewidth=1)
+    hlines!(ax2, [minimum(best_values)], color = :black, linestyle = :dash, linewidth = 1)
 
     # Panel 3: L2 approximation error per orthant
-    ax3 = Axis(fig[1, 3],
-        xlabel="Orthant",
-        ylabel="L2 Norm",
-        title="Polynomial Approximation Error",
-        xticks=1:n_orthants
+    ax3 = Axis(
+        fig[1, 3],
+        xlabel = "Orthant",
+        ylabel = "L2 Norm",
+        title = "Polynomial Approximation Error",
+        xticks = 1:n_orthants,
     )
-    barplot!(ax3, orthants, l2_norms, color=colors)
+    barplot!(ax3, orthants, l2_norms, color = colors)
 
     # Legend
     true_signs = join(orthant_to_signs(true_orthant, ndims), ",")
     best_signs = join(orthant_to_signs(best_orthant, ndims), ",")
 
-    Legend(fig[2, :],
-        [PolyElement(color=:green),
-         PolyElement(color=:red),
-         PolyElement(color=:steelblue)],
-        ["Contains p_true: Orthant $true_orthant ($true_signs)",
-         "Selected (global min): Orthant $best_orthant ($best_signs)",
-         "Other orthants"],
-        orientation=:horizontal,
-        framevisible=false
+    Legend(
+        fig[2, :],
+        [
+            PolyElement(color = :green),
+            PolyElement(color = :red),
+            PolyElement(color = :steelblue),
+        ],
+        [
+            "Contains p_true: Orthant $true_orthant ($true_signs)",
+            "Selected (global min): Orthant $best_orthant ($best_signs)",
+            "Other orthants",
+        ],
+        orientation = :horizontal,
+        framevisible = false,
     )
 
-    return fig, (true_orthant=true_orthant, best_orthant=best_orthant,
-                 true_signs=true_signs, best_signs=best_signs)
+    return fig,
+    (
+        true_orthant = true_orthant,
+        best_orthant = best_orthant,
+        true_signs = true_signs,
+        best_signs = best_signs,
+    )
 end
 
 function print_summary(data, analysis)
@@ -193,15 +209,23 @@ function print_summary(data, analysis)
     println("  - L2 norm: $(@sprintf("%.1f", true_stats["L2_norm"]))")
     println()
 
-    println("Algorithm selected Orthant $(analysis.best_orthant) (signs: $(analysis.best_signs))")
+    println(
+        "Algorithm selected Orthant $(analysis.best_orthant) (signs: $(analysis.best_signs))",
+    )
     println("  - Critical points: $(best_stats["critical_points"])")
-    println("  - Best value: $(@sprintf("%.2f", best_stats["best_value"])) <- GLOBAL MINIMUM")
+    println(
+        "  - Best value: $(@sprintf("%.2f", best_stats["best_value"])) <- GLOBAL MINIMUM",
+    )
     println("  - L2 norm: $(@sprintf("%.1f", best_stats["L2_norm"]))")
     println()
 
     if analysis.true_orthant != analysis.best_orthant
-        println("MISMATCH: Algorithm chose orthant $(analysis.best_orthant), but p_true is in orthant $(analysis.true_orthant)")
-        println("This explains the $(@sprintf("%.1f%%", data.recovery_error * 100)) recovery error.")
+        println(
+            "MISMATCH: Algorithm chose orthant $(analysis.best_orthant), but p_true is in orthant $(analysis.true_orthant)",
+        )
+        println(
+            "This explains the $(@sprintf("%.1f%%", data.recovery_error * 100)) recovery error.",
+        )
     else
         println("MATCH: Algorithm correctly identified the orthant containing p_true.")
     end
@@ -210,7 +234,9 @@ function print_summary(data, analysis)
     println("-"^70)
     println("Per-orthant breakdown:")
     println("-"^70)
-    println(@sprintf("%-8s %-12s %-15s %-12s", "Orthant", "Crit Pts", "Best f(p)", "L2 Norm"))
+    println(
+        @sprintf("%-8s %-12s %-15s %-12s", "Orthant", "Crit Pts", "Best f(p)", "L2 Norm")
+    )
     println("-"^70)
 
     for s in orthant_stats
@@ -220,8 +246,16 @@ function print_summary(data, analysis)
         elseif s["orthant"] == analysis.best_orthant
             marker = " [selected]"
         end
-        println(@sprintf("%-8d %-12d %-15.2f %-12.1f%s",
-            s["orthant"], s["critical_points"], s["best_value"], s["L2_norm"], marker))
+        println(
+            @sprintf(
+                "%-8d %-12d %-15.2f %-12.1f%s",
+                s["orthant"],
+                s["critical_points"],
+                s["best_value"],
+                s["L2_norm"],
+                marker
+            )
+        )
     end
 
     println("-"^70)
@@ -257,7 +291,7 @@ function main()
 
     # Also save PNG for quick viewing
     png_path = replace(output_path, ".pdf" => ".png")
-    save(png_path, fig, px_per_unit=2)
+    save(png_path, fig, px_per_unit = 2)
     println("Saved: $png_path")
 
     if args["show"]

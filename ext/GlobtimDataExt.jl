@@ -33,7 +33,7 @@ function create_results_dataframe()
         critical_points = Int[],
         computation_time = Float64[],
         degree = Int[],
-        samples = Int[]
+        samples = Int[],
     )
 end
 

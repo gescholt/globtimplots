@@ -32,27 +32,30 @@ function GlobtimPlots.plot_polyapprox_3d(
     TR::AbstractProblemInput,
     df::DataFrame,
     df_min::DataFrame;
-    figure_size::Tuple{Int, Int} = (1000, 800),
-    z_limits::Union{Nothing, Tuple{Float64, Float64}} = nothing,
+    figure_size::Tuple{Int,Int} = (1000, 800),
+    z_limits::Union{Nothing,Tuple{Float64,Float64}} = nothing,
     show_captured::Bool = true,
     alpha_surface::Float64 = 0.7,
     rotate::Bool = false,
     filename::String = "function_3d_rotation.mp4",
     fade::Bool = false,
-    z_cut = 0.25
+    z_cut = 0.25,
 )
     if rotate
         @warn "WGLMakie does not support record() — ignoring rotate=true. Use GLMakie for animation."
     end
 
     fig = GlobtimPlots._plot_polyapprox_3d_impl(
-        pol, TR, df, df_min;
+        pol,
+        TR,
+        df,
+        df_min;
         figure_size = figure_size,
         z_limits = z_limits,
         show_captured = show_captured,
         alpha_surface = alpha_surface,
         fade = fade,
-        z_cut = z_cut
+        z_cut = z_cut,
     )
 
     return fig

@@ -29,12 +29,8 @@ using Dates
         using DataFrames
 
         # Create a minimal test ExperimentResult
-        test_cp_df = DataFrame(
-            x1 = [1.0, 2.0],
-            x2 = [1.5, 2.5],
-            z = [0.1, 0.2],
-            degree = [3, 3]
-        )
+        test_cp_df =
+            DataFrame(x1 = [1.0, 2.0], x2 = [1.5, 2.5], z = [0.1, 0.2], degree = [3, 3])
 
         exp_result = ExperimentResult(
             "test_experiment_001",
@@ -44,7 +40,7 @@ using Dates
             test_cp_df,
             Dict("runtime_seconds" => 10.5),
             nothing,
-            "/tmp/test_exp"
+            "/tmp/test_exp",
         )
 
         # Verify the type works
@@ -56,7 +52,7 @@ using Dates
             "test_campaign_001",
             [exp_result],
             Dict("campaign_param" => "test"),
-            now()
+            now(),
         )
 
         @test campaign isa CampaignResults
@@ -89,7 +85,9 @@ using Dates
         if haskey(deps, "GlobtimPostProcessing")
             println("✓ GlobtimPlots directly depends on GlobtimPostProcessing")
         elseif haskey(deps, "Globtim")
-            println("✓ GlobtimPlots depends on Globtim (which includes GlobtimPostProcessing)")
+            println(
+                "✓ GlobtimPlots depends on Globtim (which includes GlobtimPostProcessing)",
+            )
         end
     end
 end
