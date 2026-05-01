@@ -1,0 +1,173 @@
+# GlobtimPlots
+
+Visualization and plotting library for the Globtim global optimization ecosystem.
+
+## Overview
+
+GlobtimPlots provides specialized visualization tools for analyzing polynomial approximation experiments and optimization campaigns:
+
+- **Experiment Results**: L2 convergence, parameter recovery, condition number analysis
+- **Campaign Comparisons**: Multi-experiment visualizations with automatic label generation
+- **Level Set Visualization**: 3D surface plots, contour plots, animated trajectories
+- **Critical Point Analysis**: Parameter space visualization, eigenvalue analysis, Hessian diagnostics
+
+Supports both **interactive** (GLMakie) and **static** (CairoMakie) plotting backends.
+
+## Getting Started
+
+### Installation
+
+GlobtimPlots is **not registered in Julia General**. To use it, clone the monorepo and develop it locally:
+
+```bash
+# Clone the monorepo
+git clone https://github.com/gescholt/globtimplots.git
+cd globtimplots
+
+# Develop the package
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+```
+
+### Manual Development (Alternative)
+
+If you prefer manual setup:
+
+```julia
+using Pkg
+Pkg.add("GlobtimPlots")
+```
+
+Or, against a local checkout:
+
+```julia
+using Pkg
+Pkg.develop(path="/path/to/GlobtimPlots.jl")
+```
+
+## Quick Start
+
+### Plot Experiment Results
+
+```julia
+using GlobtimPlots
+using GlobtimPostProcessing
+
+# Load experiment results
+campaign = load_campaign_results("experiment_campaign")
+
+# Create interactive plots (GLMakie window)
+create_experiment_plots(campaign, Interactive)
+
+# Or save static plots to files
+create_experiment_plots(campaign, Static, output_dir="plots/")
+```
+
+### Compare Multiple Campaigns
+
+```julia
+# Compare different parameter configurations
+campaigns = [
+    load_campaign_results("campaign_deg6"),
+    load_campaign_results("campaign_deg8"),
+    load_campaign_results("campaign_deg10")
+]
+labels = ["Degree 6", "Degree 8", "Degree 10"]
+
+fig = create_campaign_comparison_plot(campaigns, labels)
+save_plot("comparison.png", fig, Static)
+```
+
+### Visualize Level Sets
+
+```julia
+# 3D surface plot of polynomial approximation
+fig = plot_polyapprox_3d(polynomial_data, resolution=50)
+
+# 2D level set contours
+fig = plot_polyapprox_levelset(polynomial_data, num_levels=20)
+```
+
+## Key Functions
+
+### Experiment Visualization
+- `plot_experiment_results_interactive()` - Interactive GLMakie window
+- `plot_experiment_results_static()` - Static file output
+- `create_experiment_plots()` - Unified interface with backend selection
+
+### Campaign Analysis
+- `create_campaign_comparison_plot()` - Compare multiple campaigns
+- `generate_experiment_labels()` - Auto-generate informative labels
+- `create_single_plot()` - Individual metric visualization
+
+### Level Set & Surfaces
+- `plot_polyapprox_3d()` - 3D surface visualization
+- `plot_polyapprox_levelset()` - 2D contour plots
+- `plot_level_set()` - Custom level set visualization
+- `create_level_set_animation()` - Animated trajectories
+
+### Critical Point Analysis
+- `plot_convergence_analysis()` - L2 error vs degree
+- `plot_condition_numbers()` - Numerical conditioning
+- `plot_critical_eigenvalues()` - Hessian eigenvalue analysis
+- `plot_hessian_norms()` - Matrix norm diagnostics
+
+### Subdivision Visualization
+- `plot_subdivision_partition()` - Domain partition with convergence coloring and CPs
+- `plot_subdivision_on_levelset()` - Objective contours with subdivision overlay (tree-based)
+- `plot_subdivision_on_levelset_from_bounds()` - Same plot from serialized leaf bounds (no tree)
+- `plot_subdivision_error_heatmap()` - Per-cell approximation error on fine grid
+- `interactive_error_explorer()` - GLMakie zoom-refine explorer
+
+## Dependencies
+
+**Core Plotting:**
+- CairoMakie (static plots)
+- GLMakie (interactive plots)
+
+**Data Handling:**
+- DataFrames, CSV
+- Statistics, LinearAlgebra
+
+**Globtim Ecosystem:**
+- GlobtimPostProcessing (for `ExperimentResult` and `CampaignResults` types)
+
+**Note:** GlobtimPlots depends on **Globtim** (core) and **GlobtimPostProcessing**.
+
+## Architecture
+
+GlobtimPlots sits at the visualization layer of the Globtim ecosystem:
+
+```
+Globtim → GlobtimPostProcessing → GlobtimPlots
+(compute)    (data structures)     (visualization)
+```
+
+This separation allows:
+- Clean dependency hierarchy (no circular deps)
+- Independent testing and development
+- Flexible plotting without core algorithm changes
+
+## Testing
+
+```bash
+cd globtimplots
+julia --project=. -e 'using Pkg; Pkg.test()'
+```
+
+## Related Packages
+
+- [Globtim.jl](https://github.com/gescholt/Globtim.jl) - Core optimization algorithms
+- [GlobtimPostProcessing](https://github.com/gescholt/globtimpostprocessing) - Experiment data structures and analysis
+
+## Contact & Issues
+
+- **Issues:** https://github.com/gescholt/globtimplots/issues
+- **Maintainer:** Georgy Scholten
+
+## License
+
+GPL-3.0 - See [LICENSE](LICENSE) for details.
+
+---
+
+**Note:** VegaLite and Tidier-based plotting functions are temporarily disabled due to dependency conflicts. These will be re-enabled once compatibility is resolved.

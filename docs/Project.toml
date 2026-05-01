@@ -1,0 +1,9 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GlobtimPlots = "dce1bbde-eed0-4d20-b978-1e0da4aec0e5"
+
+[sources]
+GlobtimPlots = {path = ".."}
+
+[compat]
+Documenter = "1"
