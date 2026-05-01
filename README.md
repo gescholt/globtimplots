@@ -34,7 +34,14 @@ If you prefer manual setup:
 
 ```julia
 using Pkg
-Pkg.develop(path="/path/to/GlobalOptim/globtimplots")
+Pkg.add("GlobtimPlots")
+```
+
+Or, against a local checkout:
+
+```julia
+using Pkg
+Pkg.develop(path="/path/to/GlobtimPlots.jl")
 ```
 
 ## Quick Start
