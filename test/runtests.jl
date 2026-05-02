@@ -477,5 +477,7 @@ end
     end
 end
 
+include("test_morse_slider.jl")
+
 # Aqua.jl quality assurance tests
 include("test_aqua.jl")

@@ -4,7 +4,7 @@
 using Pkg
 
 println("🚀 Setting up GlobtimPlots notebook environment")
-println("=" ^ 60)
+println("="^60)
 
 # Activate the GlobtimPlots project environment
 globtimplots_path = abspath(joinpath(@__DIR__, ".."))

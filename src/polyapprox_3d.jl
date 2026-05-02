@@ -15,7 +15,7 @@ The GLMakie extension wraps this to add `rotate` animation support.
 # Arguments
 - `pol::AbstractPolynomialData`: Polynomial approximation data
 - `TR::AbstractProblemInput`: Problem domain specification
-- `df::DataFrame`: All critical points (must have columns `x1`, `x2`, `z`, optionally `close`)
+- `df::DataFrame`: All critical points (must have columns `x1`, `x2`, `z`; optional `close` for `:proximity` mode or `critical_point_type` for `:hessian_type` mode)
 - `df_min::DataFrame`: Minima points (must have columns `x1`, `x2`, `value`, `captured`)
 
 # Keyword Arguments
@@ -25,6 +25,7 @@ The GLMakie extension wraps this to add `rotate` animation support.
 - `alpha_surface::Float64=0.7`: Surface transparency
 - `fade::Bool=false`: Enable fade effect for top portion of z-range
 - `z_cut::Float64=0.25`: Fraction of z-range to fade (when `fade=true`)
+- `color_by::Symbol=:proximity`: How to color/group CP markers. `:proximity` (default) splits on `df.close`; `:hessian_type` groups by `df.critical_point_type` using `CP_TYPE_TABLE` palette + markers (min/saddle/max/degenerate).
 """
 function _plot_polyapprox_3d_impl(
     pol::AbstractPolynomialData,
@@ -37,6 +38,7 @@ function _plot_polyapprox_3d_impl(
     alpha_surface::Float64 = 0.7,
     fade::Bool = false,
     z_cut = 0.25,
+    color_by::Symbol = :proximity,
 )
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
     z_coords = pol.z
@@ -153,8 +155,37 @@ function _plot_polyapprox_3d_impl(
     ax.azimuth[] = 3π / 4
     ax.elevation[] = π / 6
 
-    # Plot points from df with appropriate colors
-    if :close in propertynames(df)
+    # Plot points from df, dispatching on color_by mode
+    if color_by === :hessian_type
+        if !(:critical_point_type in propertynames(df))
+            error(
+                "color_by=:hessian_type requires `df.critical_point_type` column " *
+                "(values like :minimum, :maximum, :saddle, :degenerate). " *
+                "Run globtim's classification step first, or pass color_by=:proximity.",
+            )
+        end
+        types_normalized = normalize_cp_key.(df.critical_point_type)
+        for cp_type in unique(types_normalized)
+            mask = types_normalized .== cp_type
+            any(mask) || continue
+            color, marker = cp_type_appearance(cp_type)
+            label =
+                haskey(CP_TYPE_TABLE, cp_type) ? CP_TYPE_TABLE[cp_type].label :
+                string(cp_type)
+            scatter!(
+                ax,
+                df.x1[mask],
+                df.x2[mask],
+                df.z[mask],
+                markersize = 12,
+                color = color,
+                marker = marker,
+                strokecolor = :black,
+                strokewidth = 1,
+                label = "$label ($(count(mask)))",
+            )
+        end
+    elseif :close in propertynames(df)
         close_idx = df.close
         if any(close_idx)
             scatter!(

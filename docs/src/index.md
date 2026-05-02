@@ -28,6 +28,14 @@ GlobtimPlots.jl provides a comprehensive suite of plotting functions for:
 - Camera flyover animations
 - Real-time algorithm tracking
 
+### Backend-Agnostic Helpers
+- `morse_slider_levels` — Morse-theory-aware slider distributions (power-law
+  background plus dense clusters at each critical f-value), so a level-set
+  slider densifies wherever a topology change can occur.
+- `adaptive_shell_levels` — adaptive nested-shell isosurface stacks that
+  thicken near critical values and thin out across smooth regions, with
+  automatic clamping to the focus band.
+
 ## Installation
 
 ```julia

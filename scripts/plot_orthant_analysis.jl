@@ -45,7 +45,7 @@ function point_to_orthant(point, center)
     signs = sign.(point .- center)
     # Convert signs (-1,1) to bits (0,1), then to orthant index
     bits = [(s > 0 ? 1 : 0) for s in signs]
-    return sum(bits[i] * 2^(i-1) for i in eachindex(bits)) + 1
+    return sum(bits[i] * 2^(i - 1) for i in eachindex(bits)) + 1
 end
 
 """

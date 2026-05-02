@@ -221,10 +221,8 @@ function plot_error_function_2D_with_critical_points(
 
     # w_d(x) on [-1, 1] x [-1, 1] ± eps
     poly_func(poly) =
-        p -> (
-            cfs = DynamicPolynomials.coefficients(DynamicPolynomials.subs(poly, x => p));
-            isempty(cfs) ? 0.0 : cfs[1]
-        )
+        p -> (cfs = DynamicPolynomials.coefficients(DynamicPolynomials.subs(poly, x => p));
+        isempty(cfs) ? 0.0 : cfs[1])
     fine_values_wd = map(poly_func(wd_in_std_basis), fine_grid_pullback)
 
     # @info "" fine_values_f fine_values_wd
@@ -272,7 +270,7 @@ function plot_error_function_2D_with_critical_points(
         levels = levels,
     )
 
-    pts_along_valley = df[df.z .< critical_point_threshold_for_hessian, :]
+    pts_along_valley = df[df.z.<critical_point_threshold_for_hessian, :]
 
     grad = DynamicPolynomials.differentiate(wd_in_std_basis, x)
     grad_func(x) = map(f -> f(pullback(x)), poly_func.(grad))
@@ -316,7 +314,7 @@ function plot_error_function_2D_with_critical_points(
         df.x2,
         markersize = round.(
             Int,
-            10*percent.(norm.(grad_at_cp), Ref(norm.(grad_at_cp))),
+            10 * percent.(norm.(grad_at_cp), Ref(norm.(grad_at_cp))),
             RoundUp,
         ),
         # markersize = max.(1, round.(Int, 15*norm.(grad_at_cp) ./ maximum(norm.(grad_at_cp)))),
@@ -494,10 +492,8 @@ function plot_error_function_2D_with_critical_points(
 
     # w_d(x) on [-1, 1] x [-1, 1] ± eps
     poly_func(poly) =
-        p -> (
-            cfs = DynamicPolynomials.coefficients(DynamicPolynomials.subs(poly, x => p));
-            isempty(cfs) ? 0.0 : cfs[1]
-        )
+        p -> (cfs = DynamicPolynomials.coefficients(DynamicPolynomials.subs(poly, x => p));
+        isempty(cfs) ? 0.0 : cfs[1])
     fine_values_wd = map(poly_func(wd_in_std_basis), fine_grid_pullback)
 
     # ||f - w_d||_s
@@ -591,7 +587,7 @@ function plot_error_function_2D_with_critical_points(
         linestyle = :dash,
     )
 
-    pts_along_valley = df[df.z .< critical_point_threshold_for_hessian, :]
+    pts_along_valley = df[df.z.<critical_point_threshold_for_hessian, :]
 
     grad = DynamicPolynomials.differentiate(wd_in_std_basis, x)
     grad_func(x) = map(f -> f(pullback(x)), poly_func.(grad))
@@ -681,6 +677,7 @@ function GlobtimPlots.plot_polyapprox_3d(
     filename::String = "function_3d_rotation.mp4",
     fade::Bool = false,
     z_cut = 0.25,
+    color_by::Symbol = :proximity,
 )
     # Delegate to the backend-agnostic implementation in GlobtimPlots
     fig = GlobtimPlots._plot_polyapprox_3d_impl(
@@ -694,6 +691,7 @@ function GlobtimPlots.plot_polyapprox_3d(
         alpha_surface = alpha_surface,
         fade = fade,
         z_cut = z_cut,
+        color_by = color_by,
     )
 
     if isnothing(fig)

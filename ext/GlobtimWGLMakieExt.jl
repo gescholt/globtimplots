@@ -40,6 +40,7 @@ function GlobtimPlots.plot_polyapprox_3d(
     filename::String = "function_3d_rotation.mp4",
     fade::Bool = false,
     z_cut = 0.25,
+    color_by::Symbol = :proximity,
 )
     if rotate
         @warn "WGLMakie does not support record() — ignoring rotate=true. Use GLMakie for animation."
@@ -56,6 +57,7 @@ function GlobtimPlots.plot_polyapprox_3d(
         alpha_surface = alpha_surface,
         fade = fade,
         z_cut = z_cut,
+        color_by = color_by,
     )
 
     return fig
