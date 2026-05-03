@@ -17,7 +17,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/gescholt/globtimplots.git",
+    repo = "github.com/gescholt/GlobtimPlots.jl.git",
     target = "build",
     branch = "gh-pages",
     devbranch = "main",

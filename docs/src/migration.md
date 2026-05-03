@@ -73,7 +73,7 @@ Coordinate transformation utilities should be handled by your data preparation c
 
 ## Testing Your Migration
 
-1. Install GlobtimPlots: `using Pkg; Pkg.add(url="https://github.com/gescholt/globtimplots.git")`
+1. Install GlobtimPlots: `using Pkg; Pkg.add(url="https://github.com/gescholt/GlobtimPlots.jl.git")`
 2. Load appropriate backend: `using CairoMakie` or `using GLMakie`
 3. Test basic plotting: `using GlobtimPlots; # your plotting code`
 4. Run your existing test suite to ensure compatibility
@@ -84,4 +84,4 @@ If you encounter issues during migration:
 1. Check that the appropriate backend is loaded
 2. Verify your data structures match the expected formats
 3. Consult the API documentation for function signatures
-4. Open an issue on the [GitHub repository](https://github.com/gescholt/globtimplots/issues)
+4. Open an issue on the [GitHub repository](https://github.com/gescholt/GlobtimPlots.jl/issues)

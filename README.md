@@ -21,7 +21,7 @@ GlobtimPlots is **not registered in Julia General**. To use it, clone the monore
 
 ```bash
 # Clone the monorepo
-git clone https://github.com/gescholt/globtimplots.git
+git clone https://github.com/gescholt/GlobtimPlots.jl.git
 cd globtimplots
 
 # Develop the package
@@ -150,11 +150,11 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 ## Related Packages
 
 - [Globtim.jl](https://github.com/gescholt/Globtim.jl) - Core optimization algorithms
-- [GlobtimPostProcessing](https://github.com/gescholt/globtimpostprocessing) - Experiment data structures and analysis
+- [GlobtimPostProcessing](https://github.com/gescholt/GlobtimPostProcessing.jl) - Experiment data structures and analysis
 
 ## Contact & Issues
 
-- **Issues:** https://github.com/gescholt/globtimplots/issues
+- **Issues:** https://github.com/gescholt/GlobtimPlots.jl/issues
 - **Maintainer:** Georgy Scholten
 
 ## License

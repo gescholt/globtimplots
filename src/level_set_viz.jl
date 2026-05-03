@@ -404,7 +404,7 @@ end
 # These methods accept an already-evaluated `values::Array{T}` instead of a
 # callable `f`, avoiding redundant (and potentially expensive) sequential
 # re-evaluation. Useful when values were computed via parallel grid evaluation
-# (e.g., `evaluate_grid_threaded` from Dynamic_objectives).
+# (e.g., `evaluate_grid_threaded` from DynamicObjectives).
 #
 # Dispatch is unambiguous: Array{T} (these methods) vs callable (existing methods).
 # ═══════════════════════════════════════════════════════════════════════════════

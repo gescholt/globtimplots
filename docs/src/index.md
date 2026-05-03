@@ -40,7 +40,7 @@ GlobtimPlots.jl provides a comprehensive suite of plotting functions for:
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/gescholt/globtimplots.git")
+Pkg.add(url="https://github.com/gescholt/GlobtimPlots.jl.git")
 ```
 
 ## Quick Start
