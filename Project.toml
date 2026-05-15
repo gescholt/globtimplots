@@ -2,6 +2,7 @@ name = "GlobtimPlots"
 uuid = "dce1bbde-eed0-4d20-b978-1e0da4aec0e5"
 version = "0.1.1"
 authors = ["Global Optimization Team"]
+license = "GPL-3.0"
 repo = "https://github.com/gescholt/GlobtimPlots.jl"
 
 [deps]

@@ -300,7 +300,7 @@ Returns `[plot_fig, controls_fig]` (two separate windows).
 """
 function interactive_levelset_explorer(
     tree::SubdivisionTree,
-    f;
+    f::Function;
     refine_newton::Function,
     refine_optim::Function,
     raw_cp_points::Vector = Vector{Float64}[],
