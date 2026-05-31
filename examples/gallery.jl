@@ -42,7 +42,14 @@ let
     apol = adapt_polynomial_data(pol)
     ainp = adapt_problem_input(TR)
 
-    fig = cairo_plot_polyapprox_levelset(apol, ainp, df_cp, df_min; chebyshev_levels=true)
+    fig = cairo_plot_polyapprox_levelset(
+        apol, ainp, df_cp, df_min;
+        chebyshev_levels = true,
+        title = "Six-hump camel — polynomial level set (Chebyshev, d=$d)",
+        xlabel = "x₁",
+        ylabel = "x₂",
+        colorbar_label = "f(x)",
+    )
     CairoMakie.save(joinpath(ASSET_DIR, "gallery_polyapprox_levelset.png"), fig; px_per_unit=2)
     println("   → gallery_polyapprox_levelset.png")
 

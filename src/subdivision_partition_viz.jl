@@ -382,12 +382,19 @@ end
 
 Build standard legend entries for CP types, convergence borders, and p*.
 """
-function _build_legend_entries(style::SubdivisionPartitionStyle; show_raw_cps::Bool = false)
+function _build_legend_entries(
+    style::SubdivisionPartitionStyle;
+    cp_type_keys = collect(keys(CP_TYPE_TABLE)),
+    show_p_true::Bool = true,
+    show_converged::Bool = true,
+    show_unconverged::Bool = true,
+    show_raw_cps::Bool = false,
+)
     entries = Makie.LegendElement[]
     labels = String[]
 
-    # CP type entries from canonical table
-    for key in keys(CP_TYPE_TABLE)
+    for key in cp_type_keys
+        haskey(CP_TYPE_TABLE, key) || continue
         entry = CP_TYPE_TABLE[key]
         push!(
             entries,
@@ -402,34 +409,39 @@ function _build_legend_entries(style::SubdivisionPartitionStyle; show_raw_cps::B
         push!(labels, entry.label)
     end
 
-    # Fixed entries: p_true, convergence borders
-    push!(
-        entries,
-        MarkerElement(
-            marker = :star5,
-            color = :gold,
-            strokecolor = :black,
-            strokewidth = 1.5,
-            markersize = 12,
-        ),
-    )
-    push!(labels, "p* (true)")
-    push!(
-        entries,
-        LineElement(
-            color = (style.converged_strokecolor, style.convergence_border_alpha),
-            linewidth = style.converged_strokewidth,
-        ),
-    )
-    push!(labels, "Converged")
-    push!(
-        entries,
-        LineElement(
-            color = (style.unconverged_strokecolor, style.convergence_border_alpha),
-            linewidth = style.unconverged_strokewidth,
-        ),
-    )
-    push!(labels, "Unconverged")
+    if show_p_true
+        push!(
+            entries,
+            MarkerElement(
+                marker = :star5,
+                color = :gold,
+                strokecolor = :black,
+                strokewidth = 1.5,
+                markersize = 12,
+            ),
+        )
+        push!(labels, "p* (true)")
+    end
+    if show_converged
+        push!(
+            entries,
+            LineElement(
+                color = (style.converged_strokecolor, style.convergence_border_alpha),
+                linewidth = style.converged_strokewidth,
+            ),
+        )
+        push!(labels, "Converged")
+    end
+    if show_unconverged
+        push!(
+            entries,
+            LineElement(
+                color = (style.unconverged_strokecolor, style.convergence_border_alpha),
+                linewidth = style.unconverged_strokewidth,
+            ),
+        )
+        push!(labels, "Unconverged")
+    end
 
     if show_raw_cps
         push!(
@@ -597,23 +609,53 @@ function plot_subdivision_partition(
 
     # Legend (only add if we own the figure layout)
     if style.show_legend && own_fig
+        present_keys = _present_cp_keys(cp_types)
+        any_unconv = _any_unconverged(leaf_l2_errors, l2_tolerance)
+        any_conv = _any_converged(leaf_l2_errors, l2_tolerance)
         entries, labels = _build_legend_entries(
             style;
+            cp_type_keys = present_keys,
+            show_p_true = style.show_p_true && p_true !== nothing,
+            show_converged = any_conv,
+            show_unconverged = any_unconv,
             show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points),
         )
-        Legend(
-            fig[2, 1:2],
-            entries,
-            labels;
-            orientation = :horizontal,
-            framevisible = false,
-            labelsize = style.legend_labelsize,
-            patchsize = style.legend_patchsize,
-            colgap = 12,
-        )
+        if !isempty(entries)
+            Legend(
+                fig[2, 1:2],
+                entries,
+                labels;
+                orientation = :horizontal,
+                framevisible = false,
+                labelsize = style.legend_labelsize,
+                patchsize = style.legend_patchsize,
+                colgap = 12,
+                nbanks = length(entries) > 6 ? 2 : 1,
+            )
+        end
     end
 
     return fig
+end
+
+# Helpers used by the legend filter above.
+function _present_cp_keys(cp_types)
+    isempty(cp_types) && return Symbol[]
+    ks = Symbol[]
+    for t in cp_types
+        k = normalize_cp_key(t)
+        haskey(CP_TYPE_TABLE, k) && k ∉ ks && push!(ks, k)
+    end
+    return ks
+end
+
+function _any_unconverged(errs, tol)
+    tol === nothing && return false
+    return any(e -> !isnan(e) && e != Inf && e > tol, errs)
+end
+function _any_converged(errs, tol)
+    tol === nothing && return false
+    return any(e -> !isnan(e) && e != Inf && e <= tol, errs)
 end
 
 # ── Convergence-colored boundary drawing ────────────────────────────────────
@@ -881,20 +923,29 @@ function plot_subdivision_on_levelset(
 
     # Legend
     if style.show_legend && own_fig
+        leaf_ids = vcat(tree.converged_leaves, tree.active_leaves)
+        leaf_errs = [tree.subdomains[i].l2_error for i in leaf_ids]
         entries, labels = _build_legend_entries(
             style;
+            cp_type_keys = _present_cp_keys(cp_types),
+            show_p_true = style.show_p_true && p_true !== nothing,
+            show_converged = _any_converged(leaf_errs, l2_tolerance),
+            show_unconverged = _any_unconverged(leaf_errs, l2_tolerance),
             show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points),
         )
-        Legend(
-            fig[2, 1:2],
-            entries,
-            labels;
-            orientation = :horizontal,
-            framevisible = false,
-            labelsize = style.legend_labelsize,
-            patchsize = style.legend_patchsize,
-            colgap = 12,
-        )
+        if !isempty(entries)
+            Legend(
+                fig[2, 1:2],
+                entries,
+                labels;
+                orientation = :horizontal,
+                framevisible = false,
+                labelsize = style.legend_labelsize,
+                patchsize = style.legend_patchsize,
+                colgap = 12,
+                nbanks = length(entries) > 6 ? 2 : 1,
+            )
+        end
     end
 
     return fig
@@ -1026,18 +1077,25 @@ function plot_subdivision_on_levelset_from_bounds(
     if style.show_legend && own_fig
         entries, labels = _build_legend_entries(
             style;
+            cp_type_keys = _present_cp_keys(cp_types),
+            show_p_true = style.show_p_true && p_true !== nothing,
+            show_converged = _any_converged(leaf_l2_errors, l2_tolerance),
+            show_unconverged = _any_unconverged(leaf_l2_errors, l2_tolerance),
             show_raw_cps = style.show_raw_cps && !isempty(raw_cp_points),
         )
-        Legend(
-            fig[2, 1:2],
-            entries,
-            labels;
-            orientation = :horizontal,
-            framevisible = false,
-            labelsize = style.legend_labelsize,
-            patchsize = style.legend_patchsize,
-            colgap = 12,
-        )
+        if !isempty(entries)
+            Legend(
+                fig[2, 1:2],
+                entries,
+                labels;
+                orientation = :horizontal,
+                framevisible = false,
+                labelsize = style.legend_labelsize,
+                patchsize = style.legend_patchsize,
+                colgap = 12,
+                nbanks = length(entries) > 6 ? 2 : 1,
+            )
+        end
     end
 
     return fig

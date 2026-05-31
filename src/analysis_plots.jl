@@ -248,6 +248,12 @@ function cairo_plot_polyapprox_levelset(
     num_levels::Int = 30,
     show_captured::Bool = true,
     colormap::Symbol = :viridis,
+    title::AbstractString = "",
+    xlabel::AbstractString = "x₁",
+    ylabel::AbstractString = "x₂",
+    colorbar_label::AbstractString = "f(x)",
+    show_colorbar::Bool = true,
+    show_legend::Bool = true,
 )
     # Type-stable coordinate transformation using multiple dispatch
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
@@ -256,7 +262,7 @@ function cairo_plot_polyapprox_levelset(
 
     if size(coords)[2] == 2
         fig = CairoMakie.Figure(size = figure_size)
-        ax = CairoMakie.Axis(fig[1, 1], title = "")
+        ax = CairoMakie.Axis(fig[1, 1]; title = title, xlabel = xlabel, ylabel = ylabel)
 
         # Calculate z_limits if not provided (filter non-finite values from ODE solver failures)
         if isnothing(z_limits)
@@ -298,7 +304,7 @@ function cairo_plot_polyapprox_levelset(
 
         # Create contour plot
         chosen_colormap = colormap
-        CairoMakie.contourf!(
+        cf = CairoMakie.contourf!(
             ax,
             x_unique,
             y_unique,
@@ -387,6 +393,19 @@ function cairo_plot_polyapprox_levelset(
                 )
                 push!(legend_entries, "Captured")
             end
+        end
+
+        if show_colorbar
+            CairoMakie.Colorbar(fig[1, 2], cf; label = colorbar_label, width = 14)
+        end
+        if show_legend && !isempty(legend_entries)
+            CairoMakie.axislegend(
+                ax;
+                position = :rt,
+                framevisible = true,
+                backgroundcolor = (:white, 0.85),
+                labelsize = 11,
+            )
         end
         return fig
     end
