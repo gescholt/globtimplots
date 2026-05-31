@@ -20,9 +20,6 @@ using Reexport
 # Include abstract interfaces
 include("interfaces.jl")
 
-# Pure numeric helpers for Morse-aware slider distributions and adaptive shell stacks
-include("morse_slider.jl")
-
 # Include core plotting functionality
 include("analysis_plots.jl")
 include("level_set_viz.jl")  # 3D level set visualization
@@ -156,9 +153,6 @@ export plot_subdivision_partition,
     SubdivisionPartitionStyle
 export format_degree_label, effective_degree, min_degree
 export CP_TYPE_TABLE, cp_type_appearance, normalize_cp_key
-
-# Export Morse-aware slider helpers (pure numeric, backend-agnostic)
-export morse_slider_levels, adaptive_shell_levels
 
 # Export subdivision error heatmap functions
 export plot_subdivision_error_heatmap, find_containing_leaf, compute_error_grid
