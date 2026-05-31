@@ -143,32 +143,32 @@ let
         println("   degree $d → $(size(df_cp, 1)) CPs, L2 fit error = $(round(pol.nrm, sigdigits=3))")
     end
 
-    fig = Figure(size=(900, 500), fontsize=14)
-    ax_l = Axis(fig[1, 1];
-        xlabel="Polynomial degree",
-        ylabel="L2 approximation error  ||f − p||",
-        yscale=log10,
-        title="Camel 2D — convergence of the polynomial approximant",
+    fig = Figure(size=(900, 620), fontsize=14)
+    ax_top = Axis(fig[1, 1];
+        ylabel = "‖f − p_d‖₂",
+        yscale = log10,
+        title  = "Camel 2D — degree-sweep convergence",
+        xticks = degrees,
+        xticksvisible = false,
+        xticklabelsvisible = false,
+    )
+    ax_bot = Axis(fig[2, 1];
+        xlabel = "Polynomial degree  d",
+        ylabel = "# critical points found",
         xticks = degrees,
     )
-    ax_r = Axis(fig[1, 1];
-        ylabel="# critical points recovered",
-        yaxisposition=:right,
-    )
-    hidespines!(ax_r)
-    hidexdecorations!(ax_r)
-    linkxaxes!(ax_l, ax_r)
+    linkxaxes!(ax_top, ax_bot)
+    rowgap!(fig.layout, 8)
 
-    lines!(ax_l, degrees, l2_err; color=:steelblue, linewidth=2.5)
-    l2_pts = scatter!(ax_l, degrees, l2_err; color=:steelblue, markersize=12)
+    lines!(ax_top, degrees, l2_err; color=:steelblue, linewidth=2.5)
+    scatter!(ax_top, degrees, l2_err; color=:steelblue, markersize=11)
 
-    lines!(ax_r, degrees, n_cps; color=:crimson, linewidth=2.5, linestyle=:dash)
-    cp_pts = scatter!(ax_r, degrees, n_cps; color=:crimson, markersize=12, marker=:rect)
-
-    axislegend(ax_l,
-        [l2_pts, cp_pts],
-        ["L2 error (left axis, log)", "# critical points (right axis)"];
-        position=:rc, framevisible=true, backgroundcolor=(:white, 0.85))
+    lines!(ax_bot, degrees, n_cps; color=:crimson, linewidth=2.5)
+    scatter!(ax_bot, degrees, n_cps; color=:crimson, markersize=11, marker=:rect)
+    hlines!(ax_bot, [maximum(n_cps)]; color=:gray, linestyle=:dot, linewidth=1)
+    text!(ax_bot, last(degrees), maximum(n_cps);
+        text=" all $(maximum(n_cps)) CPs", align=(:right, :bottom),
+        color=:gray, fontsize=12)
 
     CairoMakie.save(joinpath(ASSET_DIR, "gallery_convergence_analysis.png"), fig; px_per_unit=2)
     println("   → gallery_convergence_analysis.png")
