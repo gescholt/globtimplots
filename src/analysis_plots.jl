@@ -249,11 +249,17 @@ function cairo_plot_polyapprox_levelset(
     show_captured::Bool = true,
     colormap::Symbol = :viridis,
     title::AbstractString = "",
+    title_fontsize::Real = 14,
     xlabel::AbstractString = "x₁",
     ylabel::AbstractString = "x₂",
     colorbar_label::AbstractString = "f(x)",
     show_colorbar::Bool = true,
     show_legend::Bool = true,
+    legend_below::Bool = false,
+    label_far::AbstractString       = "Far",
+    label_near::AbstractString      = "Near",
+    label_captured::AbstractString  = "Captured",
+    label_uncaptured::AbstractString = "Uncaptured",
 )
     # Type-stable coordinate transformation using multiple dispatch
     coords = transform_coordinates(pol.scale_factor, pol.grid, TR.center)
@@ -262,7 +268,9 @@ function cairo_plot_polyapprox_levelset(
 
     if size(coords)[2] == 2
         fig = CairoMakie.Figure(size = figure_size)
-        ax = CairoMakie.Axis(fig[1, 1]; title = title, xlabel = xlabel, ylabel = ylabel)
+        ax = CairoMakie.Axis(fig[1, 1];
+            title = title, titlesize = title_fontsize,
+            xlabel = xlabel, ylabel = ylabel)
 
         # Calculate z_limits if not provided (filter non-finite values from ODE solver failures)
         if isnothing(z_limits)
@@ -329,9 +337,9 @@ function cairo_plot_polyapprox_levelset(
                     color = :white,
                     strokecolor = :black,
                     strokewidth = 1,
-                    label = "Far",
+                    label = label_far,
                 )
-                push!(legend_entries, "Far")
+                push!(legend_entries, label_far)
             end
 
             # Near points
@@ -345,9 +353,9 @@ function cairo_plot_polyapprox_levelset(
                     color = :green,
                     strokecolor = :black,
                     strokewidth = 1,
-                    label = "Near",
+                    label = label_near,
                 )
-                push!(legend_entries, "Near")
+                push!(legend_entries, label_near)
             end
         else
             # All points if no close/far distinction
@@ -375,9 +383,9 @@ function cairo_plot_polyapprox_levelset(
                     markersize = 15,
                     marker = :diamond,
                     color = :red,
-                    label = "Uncaptured",
+                    label = label_uncaptured,
                 )
-                push!(legend_entries, "Uncaptured")
+                push!(legend_entries, label_uncaptured)
             end
 
             # Only show captured points if show_captured is true
@@ -389,9 +397,9 @@ function cairo_plot_polyapprox_levelset(
                     markersize = 15,
                     marker = :diamond,
                     color = :blue,
-                    label = "Captured",
+                    label = label_captured,
                 )
-                push!(legend_entries, "Captured")
+                push!(legend_entries, label_captured)
             end
         end
 
@@ -399,13 +407,24 @@ function cairo_plot_polyapprox_levelset(
             CairoMakie.Colorbar(fig[1, 2], cf; label = colorbar_label, width = 14)
         end
         if show_legend && !isempty(legend_entries)
-            CairoMakie.axislegend(
-                ax;
-                position = :rt,
-                framevisible = true,
-                backgroundcolor = (:white, 0.85),
-                labelsize = 11,
-            )
+            if legend_below
+                CairoMakie.Legend(
+                    fig[2, 1:(show_colorbar ? 2 : 1)],
+                    ax;
+                    orientation = :horizontal,
+                    framevisible = false,
+                    labelsize = 12,
+                    patchsize = (18, 18),
+                )
+            else
+                CairoMakie.axislegend(
+                    ax;
+                    position = :rt,
+                    framevisible = true,
+                    backgroundcolor = (:white, 0.85),
+                    labelsize = 11,
+                )
+            end
         end
         return fig
     end

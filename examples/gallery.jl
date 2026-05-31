@@ -44,11 +44,18 @@ let
 
     fig = cairo_plot_polyapprox_levelset(
         apol, ainp, df_cp, df_min;
+        figure_size = (1000, 680),
         chebyshev_levels = true,
-        title = "Six-hump camel — polynomial level set (Chebyshev, d=$d)",
+        title = "Six-hump camel — polynomial level set  (Chebyshev, d = $d)",
+        title_fontsize = 17,
         xlabel = "x₁",
         ylabel = "x₂",
         colorbar_label = "f(x)",
+        legend_below = true,
+        label_far        = "Polynomial CP (spurious)",
+        label_near       = "Polynomial CP (matched)",
+        label_captured   = "Refined minimum (captured)",
+        label_uncaptured = "Refined minimum (missed)",
     )
     CairoMakie.save(joinpath(ASSET_DIR, "gallery_polyapprox_levelset.png"), fig; px_per_unit=2)
     println("   → gallery_polyapprox_levelset.png")
@@ -115,9 +122,13 @@ let
 
     fig = plot_subdivision_partition(
         leaf_bounds, leaf_l2, leaf_deg;
-        title="Anisotropic sin(5x_1) + 0.3 sin(x_2) — adaptive subdivision",
-        subtitle="Color encodes log L2 error per leaf",
+        title="Anisotropic sin(5x₁) + 0.3 sin(x₂) — adaptive subdivision",
+        subtitle="Adaptive partition concentrates leaves along x₁ — the high-frequency direction  (color: log₁₀ L₂ error)",
         l2_tolerance=0.005,
+        style = SubdivisionPartitionStyle(
+            show_degree_labels = false,
+            fig_size = (900, 560),
+        ),
     )
     CairoMakie.save(joinpath(ASSET_DIR, "gallery_subdivision_partition.png"), fig; px_per_unit=2)
     println("   → gallery_subdivision_partition.png  ($(length(leaf_ids)) leaves)")
