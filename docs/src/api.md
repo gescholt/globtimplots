@@ -40,7 +40,7 @@ CairoMakie.save("levelset.png", fig)
 
 ## Worked examples
 
-These mirror [`pkg/globtimplots/examples/gallery.jl`](https://github.com/gescholt/globopt_merged/blob/main/pkg/globtimplots/examples/gallery.jl),
+These mirror [`pkg/globtimplots/examples/gallery.jl`](https://github.com/gescholt/GlobtimPlots.jl/blob/main/examples/gallery.jl),
 the script that regenerates the gallery images. Each assumes you have already built a
 Globtim approximation `pol`/`TR` and its critical-point DataFrames `df_cp`/`df_min`
 (see the [Home page Quick Start](index.md)).
@@ -82,7 +82,7 @@ fig = plot_convergence_analysis(results, 4, 14, 2)   # start, end, step
 ```
 
 The gallery's combined L2-error-and-CP-count figure (shown below) is hand-built with
-Makie primitives in [`gallery.jl`](https://github.com/gescholt/globopt_merged/blob/main/pkg/globtimplots/examples/gallery.jl);
+Makie primitives in [`gallery.jl`](https://github.com/gescholt/GlobtimPlots.jl/blob/main/examples/gallery.jl);
 adapt it when you want both axes on one plot.
 
 ![Convergence analysis](assets/gallery_convergence_analysis.png)

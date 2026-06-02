@@ -45,19 +45,15 @@ Hessian eigenvalues at each Camel critical point, plotted as a vertical segment 
 
 ### Installation
 
-GlobtimPlots is **not registered in Julia General** — it is a package inside the
-[globopt_merged](https://github.com/gescholt/globopt_merged) monorepo. Clone the repo
-and instantiate the `viz` profile, which bundles GlobtimPlots with Globtim and the
-Makie backends:
+GlobtimPlots is **not yet registered in Julia General**. Install it — together with a
+Makie backend and the core Globtim package — from the public repositories:
 
-```bash
-git clone https://github.com/gescholt/globopt_merged.git
-cd globopt_merged
-julia --project=profiles/viz -e 'using Pkg; Pkg.instantiate(workspace=true)'
+```julia
+using Pkg
+Pkg.add("Globtim")                                          # registered
+Pkg.add(url="https://github.com/gescholt/GlobtimPlots.jl")  # this package
+Pkg.add("CairoMakie")                                       # static backend; or GLMakie for interactive
 ```
-
-Then launch with `--project=profiles/viz` and `using GlobtimPlots` resolves. (The
-`dev` profile works too and additionally includes the analysis and dev tooling.)
 
 ## Quick Start
 
@@ -171,12 +167,12 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 ## Related Packages
 
-- [Globtim](../globtim/) - Core optimization algorithms
-- [GlobtimPostProcessing](../globtimpostprocessing/) - Experiment data structures and analysis
+- [Globtim](https://github.com/gescholt/Globtim.jl) - Core optimization algorithms
+- [GlobtimPostProcessing](https://github.com/gescholt/GlobtimPostProcessing.jl) - Experiment data structures and analysis
 
 ## Contact & Issues
 
-- **Issues:** https://github.com/gescholt/globopt_merged/issues
+- **Issues:** https://github.com/gescholt/GlobtimPlots.jl/issues
 - **Maintainer:** Georgy Scholten
 
 ## License

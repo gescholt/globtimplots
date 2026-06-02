@@ -73,7 +73,7 @@ Coordinate transformation utilities should be handled by your data preparation c
 
 ## Testing Your Migration
 
-1. Install GlobtimPlots via the monorepo `viz` profile: `julia --project=profiles/viz -e 'using Pkg; Pkg.instantiate(workspace=true)'`
+1. Install GlobtimPlots: `using Pkg; Pkg.add(url="https://github.com/gescholt/GlobtimPlots.jl")`
 2. Load appropriate backend: `using CairoMakie` or `using GLMakie`
 3. Test basic plotting: `using GlobtimPlots; # your plotting code`
 4. Run your existing test suite to ensure compatibility
