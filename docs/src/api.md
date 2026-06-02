@@ -4,6 +4,89 @@
 CurrentModule = GlobtimPlots
 ```
 
+GlobtimPlots is organized by what you want to draw:
+
+- **Level sets** — polynomial approximation contours with critical points overlaid
+  (`cairo_plot_polyapprox_levelset`, `plot_polyapprox_levelset`).
+- **Convergence & statistics** — how approximation quality and recovered critical-point
+  counts move with degree (`plot_convergence_analysis`, `plot_discrete_l2`).
+- **Eigenvalue / Morse spectra** — Hessian eigenvalues per critical point, colored by
+  Morse type (`plot_critical_eigenvalues`, `plot_all_eigenvalues`).
+- **Subdivision** — adaptive-partition diagnostics
+  (`plot_subdivision_partition`, `plot_subdivision_on_levelset`, `interactive_error_explorer`).
+- **1D / 2D approximation** — polynomial-fit-vs-truth plots
+  (`plot_1d_polynomial_approximation`, `plot_2d_partition`).
+
+The categorized index below complements the auto-generated docstrings.
+
+## Choosing a backend
+
+GlobtimPlots draws through [Makie](https://docs.makie.org/). You must load a backend
+with `using` **before** calling any plot function — the backend-specific methods live
+in package extensions that activate on load:
+
+| Backend | Use for | Notes |
+|---------|---------|-------|
+| `CairoMakie` | Static, publication-quality PNG / PDF / SVG | Powers all `cairo_*` functions and static `plot_*` output |
+| `GLMakie` | Interactive 3D windows, animation, `interactive_error_explorer` | Needs a display / GPU; not available headless |
+| `WGLMakie` | Browser-embedded / Documenter-rendered interactive plots | Used when embedding interactive figures in these docs |
+
+```julia
+using GlobtimPlots
+using CairoMakie     # load the backend FIRST
+fig = cairo_plot_polyapprox_levelset(apol, ainp, df_cp, df_min)
+CairoMakie.save("levelset.png", fig)
+```
+
+## Worked examples
+
+These mirror [`pkg/globtimplots/examples/gallery.jl`](https://github.com/gescholt/globopt_merged/blob/main/pkg/globtimplots/examples/gallery.jl),
+the script that regenerates the gallery images. Each assumes you have already built a
+Globtim approximation `pol`/`TR` and its critical-point DataFrames `df_cp`/`df_min`
+(see the [Home page Quick Start](index.md)).
+
+**Level set with critical points** — `cairo_plot_polyapprox_levelset`:
+
+```julia
+apol = adapt_polynomial_data(pol)
+ainp = adapt_problem_input(TR)
+fig = cairo_plot_polyapprox_levelset(
+    apol, ainp, df_cp, df_min;
+    chebyshev_levels = true,
+    title = "Six-hump camel — polynomial level set (Chebyshev, d = 6)",
+    xlabel = "x₁", ylabel = "x₂", colorbar_label = "f(x)",
+)
+```
+![Level set](assets/gallery_polyapprox_levelset.png)
+
+**Adaptive subdivision partition** — `plot_subdivision_partition` (build a `tree` with
+`adaptive_refine`, then pass per-leaf bounds / L2 errors / degrees):
+
+```julia
+fig = plot_subdivision_partition(
+    leaf_bounds, leaf_l2, leaf_deg;
+    title = "Anisotropic subdivision  (color: log₁₀ L₂ error)",
+    l2_tolerance = 0.005,
+    style = SubdivisionPartitionStyle(show_degree_labels = false),
+)
+```
+![Subdivision partition](assets/gallery_subdivision_partition.png)
+
+**Degree-sweep convergence** — `plot_convergence_analysis` takes a `results` dictionary
+keyed by polynomial degree (each value carrying a `.df` of analyzed critical points)
+plus the degree range, and plots how the critical-point spread tightens with degree:
+
+```julia
+# results :: Dict{Int} where results[d].df is the analyze_critical_points DataFrame at degree d
+fig = plot_convergence_analysis(results, 4, 14, 2)   # start, end, step
+```
+
+The gallery's combined L2-error-and-CP-count figure (shown below) is hand-built with
+Makie primitives in [`gallery.jl`](https://github.com/gescholt/globopt_merged/blob/main/pkg/globtimplots/examples/gallery.jl);
+adapt it when you want both axes on one plot.
+
+![Convergence analysis](assets/gallery_convergence_analysis.png)
+
 ## Core Functions
 
 ```@autodocs
