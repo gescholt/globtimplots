@@ -256,9 +256,9 @@ function cairo_plot_polyapprox_levelset(
     show_colorbar::Bool = true,
     show_legend::Bool = true,
     legend_below::Bool = false,
-    label_far::AbstractString       = "Far",
-    label_near::AbstractString      = "Near",
-    label_captured::AbstractString  = "Captured",
+    label_far::AbstractString = "Far",
+    label_near::AbstractString = "Near",
+    label_captured::AbstractString = "Captured",
     label_uncaptured::AbstractString = "Uncaptured",
 )
     # Type-stable coordinate transformation using multiple dispatch
@@ -268,9 +268,13 @@ function cairo_plot_polyapprox_levelset(
 
     if size(coords)[2] == 2
         fig = CairoMakie.Figure(size = figure_size)
-        ax = CairoMakie.Axis(fig[1, 1];
-            title = title, titlesize = title_fontsize,
-            xlabel = xlabel, ylabel = ylabel)
+        ax = CairoMakie.Axis(
+            fig[1, 1];
+            title = title,
+            titlesize = title_fontsize,
+            xlabel = xlabel,
+            ylabel = ylabel,
+        )
 
         # Calculate z_limits if not provided (filter non-finite values from ODE solver failures)
         if isnothing(z_limits)
