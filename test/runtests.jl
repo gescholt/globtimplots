@@ -479,5 +479,8 @@ end
 
 include("test_morse_slider.jl")
 
+# Render smokes for the most-used entry points (bead fjee)
+include("test_render_smokes.jl")
+
 # Aqua.jl quality assurance tests
 include("test_aqua.jl")
