@@ -58,9 +58,7 @@ using StaticArrays
     @testset "create_level_set_visualization (3D grid)" begin
         n = 9
         xs = range(-1.0, 1.0; length = n)
-        grid = [
-            SVector{3,Float64}(x, y, z) for x in xs, y in xs, z in xs
-        ]
+        grid = [SVector{3,Float64}(x, y, z) for x in xs, y in xs, z in xs]
         f = p -> p[1]^2 + p[2]^2 + p[3]^2
 
         result = create_level_set_visualization(f, grid, nothing, (0.2, 0.8))
@@ -68,15 +66,11 @@ using StaticArrays
     end
 
     @testset "create_experiment_plots (Static backend)" begin
-        result = (
-            experiment_id = "render_smoke",
-            enabled_tracking = ["approximation_quality"],
-        )
+        result =
+            (experiment_id = "render_smoke", enabled_tracking = ["approximation_quality"])
         stats = Dict(
-            "approximation_quality" => Dict(
-                "degrees" => [4, 6, 8],
-                "l2_errors" => [0.5, 0.1, 0.02],
-            ),
+            "approximation_quality" =>
+                Dict("degrees" => [4, 6, 8], "l2_errors" => [0.5, 0.1, 0.02]),
         )
 
         fig = create_experiment_plots(result, stats; backend = Static)
