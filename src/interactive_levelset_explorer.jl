@@ -226,8 +226,12 @@ function _refine_levelset!(
     ys = collect(range(y_min, y_max; length = resolution))
     Z = compute_grid(f, xs, ys)
 
-    xs_obs[] = xs
-    ys_obs[] = ys
+    # `.val` writes are silent: contourf's OnAny over (xs, ys, Z_display) must
+    # not fire until all three have consistent shapes — a `[] =` here crashes
+    # isobands when the new resolution differs from the current grid (uyeq).
+    # The single notification comes from the Z_display_obs write below.
+    xs_obs.val = xs
+    ys_obs.val = ys
     raw_Z_ref[] = Z
     _apply_levelset_display_transform!(raw_Z_ref, Z_display_obs, log_scale_obs, n_levels)
 
@@ -269,8 +273,10 @@ function _reset_levelset!(
     ys = collect(range(root_bounds[2]...; length = resolution))
     Z = compute_grid(f, xs, ys)
 
-    xs_obs[] = xs
-    ys_obs[] = ys
+    # Same shape-race guard as _refine_levelset! — silent axis writes, single
+    # notification via the Z_display_obs write below (uyeq).
+    xs_obs.val = xs
+    ys_obs.val = ys
     raw_Z_ref[] = Z
     _apply_levelset_display_transform!(raw_Z_ref, Z_display_obs, log_scale_obs, n_levels)
 
