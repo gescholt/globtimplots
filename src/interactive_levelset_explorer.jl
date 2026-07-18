@@ -1204,8 +1204,7 @@ function interactive_levelset_explorer(
         mp = events(ax.scene).mouseposition[]
         root_scene = Makie.root(ax.scene)
         isempty(root_scene.current_screens) && return Consume(false)
-        picks =
-            Makie.pick_sorted(root_scene, last(root_scene.current_screens), mp, 10)
+        picks = Makie.pick_sorted(root_scene, last(root_scene.current_screens), mp, 10)
         hit = findfirst(p -> p[1] === raw_scatter, picks)
         hit === nothing && return Consume(false)
         picked_idx = picks[hit][2]
