@@ -1195,8 +1195,17 @@ function interactive_levelset_explorer(
         # pick_sorted returns all (plot, index) pairs within radius, sorted by
         # distance.  We search for raw_scatter because pick() only returns the
         # topmost plot (often the contourf background).
+        #
+        # Resolve the display screen EXPLICITLY (4-arg pick_sorted). The 3-arg
+        # form goes through Makie.getscreen, which filters registered screens
+        # by current_backend() — sessions that load both GLMakie and CairoMakie
+        # (CairoMakie's __init__ activates itself) resolve no screen and every
+        # pick comes back empty, killing CP selection (ryzt root cause).
         mp = events(ax.scene).mouseposition[]
-        picks = Makie.pick_sorted(ax.scene, mp, 10)
+        root_scene = Makie.root(ax.scene)
+        isempty(root_scene.current_screens) && return Consume(false)
+        picks =
+            Makie.pick_sorted(root_scene, last(root_scene.current_screens), mp, 10)
         hit = findfirst(p -> p[1] === raw_scatter, picks)
         hit === nothing && return Consume(false)
         picked_idx = picks[hit][2]
