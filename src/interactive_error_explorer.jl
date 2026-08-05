@@ -1,7 +1,7 @@
 # interactive_error_explorer.jl
 # Interactive GLMakie explorer for subdivision polynomial approximation error.
 # Zoom into a region, press "Refine View" to re-render at higher resolution.
-# Adapted from Opt_Traj/examples/getting_started/landscape_explorer.jl refine!() pattern.
+# Adapted from an interactive landscape-explorer refine!() pattern.
 #
 # Requires GLMakie (not loaded by default in GlobtimPlots — load it separately).
 
