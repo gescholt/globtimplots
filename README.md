@@ -175,8 +175,13 @@ This separation allows:
 
 ## Testing
 
+```julia-repl
+pkg> test GlobtimPlots
+```
+
+Or from a clone, with the package root as the working directory:
+
 ```bash
-cd globtimplots
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
