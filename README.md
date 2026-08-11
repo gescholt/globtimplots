@@ -45,15 +45,29 @@ Hessian eigenvalues at each Camel critical point, plotted as a vertical segment 
 
 ### Installation
 
-GlobtimPlots is **not yet registered in Julia General**. Install it — together with a
-Makie backend and the core Globtim package — from the public repositories:
+Requires **Julia 1.12** or newer.
 
-```julia
-using Pkg
-Pkg.add("Globtim")                                          # registered
-Pkg.add(url="https://github.com/gescholt/GlobtimPlots.jl")  # this package
-Pkg.add("CairoMakie")                                       # static backend; or GLMakie for interactive
+GlobtimPlots is **not yet registered in Julia General**, so it installs by URL. Press `]`
+at the Julia prompt to enter Pkg mode (backspace exits):
+
+```julia-repl
+pkg> add https://github.com/gescholt/GlobtimPlots.jl
+pkg> add CairoMakie
 ```
+
+Globtim and GlobtimPostProcessing are registered dependencies and come in automatically.
+
+For the **interactive** plots — `interactive_error_explorer`,
+`plot_experiment_results_interactive`, and the other GLMakie entry points — installing
+GLMakie alone is not enough. They live in a package extension that activates only when
+all three of its triggers are loaded:
+
+```julia-repl
+pkg> add GLMakie DynamicPolynomials Parameters
+```
+
+then `using GlobtimPlots, GLMakie, DynamicPolynomials, Parameters`. The same applies to
+WGLMakie for browser output (`add WGLMakie`), and to CSV for the data-loading extension.
 
 ## Quick Start
 
@@ -131,18 +145,19 @@ fig = plot_polyapprox_levelset(polynomial_data, num_levels=20)
 
 ## Dependencies
 
-**Core Plotting:**
-- CairoMakie (static plots)
-- GLMakie (interactive plots)
+**Required** (installed automatically):
+- CairoMakie, Makie — static plots
+- DataFrames, Statistics, LinearAlgebra
+- Globtim (core) and GlobtimPostProcessing — for `ExperimentResult` and `CampaignResults`
 
-**Data Handling:**
-- DataFrames, CSV
-- Statistics, LinearAlgebra
+**Optional**, via package extensions — each activates only once *every* trigger below it
+is loaded, not just the backend:
 
-**Globtim Ecosystem:**
-- GlobtimPostProcessing (for `ExperimentResult` and `CampaignResults` types)
-
-**Note:** GlobtimPlots depends on **Globtim** (core) and **GlobtimPostProcessing**.
+| Extension | Add and `using` all of | Enables |
+|-----------|------------------------|---------|
+| `GlobtimGLMakieExt` | `GLMakie`, `DynamicPolynomials`, `Parameters` | Interactive windows, zoom-refine explorer |
+| `GlobtimWGLMakieExt` | `WGLMakie` | Browser / notebook output |
+| `GlobtimDataExt` | `CSV` | CSV loading helpers |
 
 ## Architecture
 
